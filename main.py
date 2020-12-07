@@ -13,13 +13,13 @@ from src.task import Task
 # Unit of time minute
 # Use only ten 10 first tasks of each block
 # Assume that we have 3 meca ressources and 1 oc
-
-ms1_data = pd.read_excel("/Users/paul/Documents/5ir/projet Intégrateur/planificateur/data/ms1.xlsx")
-ms2_data = pd.read_excel("/Users/paul/Documents/5ir/projet Intégrateur/planificateur/data/ms2.xlsx")
-ms3_data = pd.read_excel("/Users/paul/Documents/5ir/projet Intégrateur/planificateur/data/ms2.xlsx")
-fov_data = pd.read_excel("/Users/paul/Documents/5ir/projet Intégrateur/planificateur/data/fov.xlsx")
-gtw_data = pd.read_excel("/Users/paul/Documents/5ir/projet Intégrateur/planificateur/data/gtw.xlsx")
-ms4_data = pd.read_excel("/Users/paul/Documents/5ir/projet Intégrateur/planificateur/data/ms4.xlsx")
+PATH = os.path.abspath(os.getcwd())+"/data/"
+ms1_data = pd.read_excel(PATH+"ms1.xlsx")
+ms2_data = pd.read_excel(PATH+"ms2.xlsx")
+ms3_data = pd.read_excel(PATH+"ms2.xlsx")
+fov_data = pd.read_excel(PATH+"fov.xlsx")
+gtw_data = pd.read_excel(PATH+"gtw.xlsx")
+ms4_data = pd.read_excel(PATH+"ms4.xlsx")
 
 est = Module("EST")
 ouest = Module("OUEST")
@@ -49,9 +49,8 @@ ms3_tasks = df2task(ms3_data, ms3)
 ms4_tasks = df2task(ms4_data, ms4)
 fov_tasks = df2task(fov_data, fov)
 gtw_tasks = df2task(gtw_data, gtw)
-
+PATH = "/data/"
 r = [Resource("r1", rType.oc), Resource("r2", rType.meca), Resource("r3", rType.meca), Resource('r4', rType.meca)]
-
 #Build a solution based on ResourceOrder solution of jobshop
 # Solve it
 
