@@ -1,4 +1,4 @@
-from src.solver import BasicSolver
+from src.solver import resourceOrder
 from src.resource import Resource, rType
 from src.module import Module
 from src.bloc import Bloc
@@ -28,13 +28,12 @@ ms2 = Bloc("MS2", est)
 ms3 = Bloc("MS3", est)
 ms4 = Bloc("MS4", ouest)
 fov = Bloc("FOV", est)
-gtw = Bloc("GTW", est)
-
+gtw = Bloc("GTW", ouest)
 
 def df2task(data, bloc):
     tasks = []
     for index, row in data.iterrows():
-        task = Task(name = row['Task_id'], bloc= bloc, meca=row['meca'], oc=row['oc'])
+        task = Task(name=row['Task_id'], bloc=bloc, meca=row['meca'], oc=row['oc'])
         tasks.append(task)
     for index, row in data.iterrows():
         if str(row['next']) != "nan":
@@ -52,6 +51,8 @@ fov_tasks = df2task(fov_data, fov)
 gtw_tasks = df2task(gtw_data, gtw)
 
 r = [Resource("r1", rType.oc), Resource("r2", rType.meca), Resource("r3", rType.meca), Resource('r4', rType.meca)]
+
+#Build a solution based on ResourceOrder solution of jobshop
 # Solve it
 
 # Display solution

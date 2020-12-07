@@ -1,8 +1,8 @@
 class Task:
+    kitting = 3
     def __init__(self, name, bloc,  meca, oc):
         self.name = name
         self.bloc = bloc
-        self.kitting = 3
         self.meca = meca
         self.oc = oc
         self.previous = []
