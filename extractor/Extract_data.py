@@ -3,11 +3,11 @@ import minilp
 import pandas as pd
 
 
-#livraisons_xlsx = pd.read_excel("./livrables/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
+livraisons_xlsx = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
 
 
 
-path = "~/Documents/5ir/projet Intégrateur/planificateur/solveur/Sequencement OUEST.xlsx" #"./livrables/Sequencement EST.xlsx"
+path = "./data/Sequencement EST Modified.xlsx"
 
 
 def extract_tasks_from_excel(path):
