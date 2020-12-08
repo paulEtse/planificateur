@@ -1,5 +1,7 @@
 from enum import Enum
-class rType(Enum):
+
+
+class Rtype(Enum):
     meca = 0
     oc = 1
 
