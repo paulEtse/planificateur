@@ -15,16 +15,18 @@ class SolveurPPC():
     def create_model():
         mdl = CpoModel(name = "TAS Scheduling")
         
+        
     def extract_datas():
         Extract_data.extract_tasks_from_excel()
         
         
         
+
 # =============================================================================
 # if name == "__main__":
-#     #sys.path.append('./src')
+#     sys.path.append('./src')
 #     ppc = SolveurPPC()
 #     print(ppc.extract_datas())
-#         
 # =============================================================================
+
         
