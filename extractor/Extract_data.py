@@ -2,6 +2,7 @@ import numpy as np
 import minilp
 import pandas as pd
 from pathlib import Path
+import math
 
 
 pathOUEST = Path("./data/Sequencement OUEST Modified.xlsx")
@@ -48,11 +49,14 @@ def extract_tasks_from_excel(path):
         req_mat.loc[task,"Livraison"] = list(livraison)
         req_mat.loc[task,"Stock"] = list(stock)
 
-        # # i = 1
-        # # req = []
-        # # while(xlsx[task.iloc[i,1]] != None):
-        # #     req.append(xlsx[task.iloc[i,1]])
-        # # req_task.loc[task,"tasks_req"] = req
+        i = 0
+        req = []
+        # print(xlsx[task].iloc[:,1])
+        while(not pd.isna(xlsx[task].iloc[i,1])):
+            #print(xlsx[task].iloc[i,1])
+            req.append(xlsx[task].iloc[i,1])
+            i+=1
+        req_task.loc[task,"tasks_req"] = list(req)
 
 
     return(time,req_mat,req_task)
