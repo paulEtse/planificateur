@@ -1,12 +1,11 @@
 import numpy as np
 import minilp
 import pandas as pd
+from pathlib import Path
 
 
-
-
-pathOUEST = "./data/Sequencement OUEST Modified.xlsx"
-pathEST = "./data/Sequencement EST Modified.xlsx"
+pathOUEST = Path("./data/Sequencement OUEST Modified.xlsx")
+pathEST = Path("./data/Sequencement EST Modified.xlsx")
 
 
 def extract_tasks_from_excel(path):
