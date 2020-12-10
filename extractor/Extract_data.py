@@ -1,14 +1,15 @@
 import numpy as np
 import minilp
 import pandas as pd
+from pathlib import Path
 
 
-livraisons_xlsx = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
+livraisons = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
 
 
 
-pathOUEST = "./data/Sequencement OUEST Modified.xlsx"
-pathEST = "./data/Sequencement EST Modified.xlsx"
+pathOUEST = Path("./data/Sequencement OUEST Modified.xlsx")
+pathEST = Path("./data/Sequencement EST Modified.xlsx")
 
 
 def extract_tasks_from_excel(path):
@@ -56,4 +57,4 @@ def extract_tasks_from_excel(path):
         req_task.loc[task,"tasks_req"] = req
 
 
-return(time,req_mat,req_task)
+    return(time,req_mat,req_task)
