@@ -3,8 +3,6 @@ import minilp
 import pandas as pd
 
 
-livraisons_xlsx = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
-
 
 
 pathOUEST = "./data/Sequencement OUEST Modified.xlsx"
@@ -12,6 +10,8 @@ pathEST = "./data/Sequencement EST Modified.xlsx"
 
 
 def extract_tasks_from_excel(path):
+    livraisons = (pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])).iloc[:,2:]
+    #print(livraisons)
     xlsx = pd.read_excel(path,sheet_name=None)
     time = pd.DataFrame(index = list(xlsx.keys()),columns=["Tps_pieds","Tps_guides","Tps_total","Tps_QC"])
     req_mat = pd.DataFrame(index = list(xlsx.keys()),columns=["Livraison","Stock","Max_livraion"])
@@ -30,30 +30,30 @@ def extract_tasks_from_excel(path):
         time.loc[task,"Tps_guides"] = guides
         time.loc[task,"Tps_total"] = total
         time.loc[task,"Tps_QC"] = QC
-        req_mat = np.asarray(xlsx[task].iloc[:,0].dropna())
+        req_mat_list = xlsx[task].iloc[:,0].dropna()
         livraison = []
         stock = []
-        for ref in req_mat:
+        for ref in np.asarray(req_mat_list):
             if ref[0] =='W':
                 livraison.append(ref)
             else:
                 stock.append(ref)
         max_livraion = livraisons.iloc[0,1]
         if(len(livraison)>0):
-            #print(livraisons.iloc[:].values)
+            #print(livraisons.iloc[2:].values)
             for ref,date in livraisons.iloc[:].values:
                 if ref in livraison:
                     if date > max_livraion:
-                        max_livraion = date
+                        max_livraion = date        
         req_mat.loc[task,"Max_livraion"] = max_livraion      
         req_mat.loc[task,"Livraison"] = list(livraison)
         req_mat.loc[task,"Stock"] = list(stock)
 
-        i = 1
-        req = []
-        while(xlsx[task.iloc[i,1]] != None):
-            req.append(xlsx[task.iloc[i,1]])
-        req_task.loc[task,"tasks_req"] = req
+        # # i = 1
+        # # req = []
+        # # while(xlsx[task.iloc[i,1]] != None):
+        # #     req.append(xlsx[task.iloc[i,1]])
+        # # req_task.loc[task,"tasks_req"] = req
 
 
-return(time,req_mat,req_task)
+    return(time,req_mat,req_task)
