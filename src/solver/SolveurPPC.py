@@ -1,30 +1,246 @@
-# -*- coding: utf-8 -*-
-
 #import SolverInterface
-from docplex.cp.model import CpoModel
+from docplex.cp.modeler import end_before_start
+from docplex.cp.model import CpoModel, CpoStepFunction, INTERVAL_MIN, INTERVAL_MAX
+import docplex.cp.utils_visu as visu
+import os
 from extractor import Extract_data
 from src import Solution
 import sys
+import pandas as pd
 
-class SolveurPPC():
-    def solve_from_skratch():
+
+
+class SolveurPPC:  
+    def __init__(self):
+        self.timeOUEST, self.req_matOUEST, self.req_taskOUEST = Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
+        self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
+        self.start_date = pd.Timestamp(year = 2019, month = 12, day = 12)
+        self.max_end_timestamp = int(self.convert_to_absolute_time(pd.Timestamp(year = 2020, month = 1, day = 15)))
+        self.kitting_time = 3 * 3600
+  
+    def solve_from_skratch(self):
         print("")
-        
-    
-        
-    def create_model():
+              
+    def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
+       
+       
+        #####################################################
+        # Creating interval variables for WEST module
+        #####################################################
+        i = 0
+        MS1_vars = []
+        MS4_vars = []
+        GTW_vars = []
+        WEST_vars = []
+        for i in range(len(self.timeOUEST)):
+            #min_start_time = int(max(0, self.convert_to_absolute_time(self.req_matOUEST.iloc[i,2])))
+            min_start_time = int(self.convert_to_absolute_time(self.req_matOUEST.iloc[i,2]))
+            meca_length = self.timeOUEST.iloc[i, 2] * 60
+            qc_length = self.timeOUEST.iloc[i, 3] * 60
+
+            kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time, name = "kitting " + self.timeOUEST.index[i])
+            meca_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = meca_length, name = "meca " + self.timeOUEST.index[i])
+            qc_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = qc_length, name = "qc " + self.timeOUEST.index[i])
+
+            mdl.add(mdl.end_before_start(kit_interval, meca_interval))
+            mdl.add(mdl.end_before_start(meca_interval, qc_interval))
+
+            WEST_vars += [kit_interval]
+            WEST_vars += [meca_interval]
+            WEST_vars += [qc_interval]
+
+            if i < 19:
+
+                MS1_vars += [kit_interval]
+                MS1_vars += [meca_interval]
+                MS1_vars += [qc_interval]
+
+            elif i >= 45:
+
+                GTW_vars += [kit_interval]
+                GTW_vars += [meca_interval]
+                GTW_vars += [qc_interval]
+            
+            else:
+
+                MS4_vars += [kit_interval]
+                MS4_vars += [meca_interval]
+                MS4_vars += [qc_interval]
+
+        # self.print_interval_vars_list(MS1_vars)
+        # print("#################################")
+        # self.print_interval_vars_list(MS4_vars)
+        # print("#################################")
+        # self.print_interval_vars_list(GTW_vars)
+
+
+        ######################################################
+        # Creating interval variables for EAST module
+        ######################################################
+        FOV_vars = []
+        MS2_vars = []
+        MS3_vars = []
+        EAST_vars = []
+        for i in range(len(self.timeEST)):
+            #min_start_time = int(max(0, self.convert_to_absolute_time(self.req_matEST.iloc[i,2])))
+            min_start_time = int(self.convert_to_absolute_time(self.req_matEST.iloc[i,2]))
+            meca_length = self.timeEST.iloc[i, 2] * 60
+            qc_length = self.timeEST.iloc[i, 3] * 60
+            
+            kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time, name = "kitting " + self.timeEST.index[i])
+            meca_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = meca_length, name = "meca " + self.timeEST.index[i])
+            qc_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = qc_length, name = "qc " + self.timeEST.index[i])
+
+            mdl.add(mdl.end_before_start(kit_interval, meca_interval))
+            mdl.add(mdl.end_before_start(meca_interval, qc_interval))
+
+            EAST_vars += [kit_interval]
+            EAST_vars += [meca_interval]
+            EAST_vars += [qc_interval]
+            
+            if i < 11:
+               
+                FOV_vars += [kit_interval]
+                FOV_vars += [meca_interval]
+                FOV_vars += [qc_interval]
+
+            elif i >= 25:
+
+                MS3_vars += [kit_interval]
+                MS3_vars += [meca_interval]
+                MS3_vars += [qc_interval]
+
+            else:
+
+                MS2_vars += [kit_interval]
+                MS2_vars += [meca_interval]
+                MS2_vars += [qc_interval]
+
+        # self.print_interval_vars_list(FOV_vars)
+        # print("#################################")
+        # self.print_interval_vars_list(MS2_vars)
+        # print("#################################")
+        # self.print_interval_vars_list(MS3_vars)
+
+        ##################################################
+        # Setting relations between interval variables
+        ##################################################
+        for task in MS1_vars:
+            for i in range(len(self.req_taskOUEST)):
+                if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
+                    for j in range(len(self.req_taskOUEST.iloc[i, 0])):
+                        for other_task in WEST_vars:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                                #print(task.name + " doit commencer après la fin de " + other_task.name)
+                                mdl.add(mdl.end_before_start(other_task, task))
+        #print("##############################################")
+        for task in MS4_vars:
+            for i in range(len(self.req_taskOUEST)):
+                if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
+                    for j in range(len(self.req_taskOUEST.iloc[i, 0])):
+                        for other_task in WEST_vars:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                                #print(task.name + " doit commencer après la fin de " + other_task.name)
+                                mdl.add(mdl.end_before_start(other_task, task))
+        #print("##############################################")
+        for task in GTW_vars:
+            for i in range(len(self.req_taskOUEST)):
+                if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
+                    for j in range(len(self.req_taskOUEST.iloc[i, 0])):
+                        for other_task in WEST_vars:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                                #print(task.name + " doit commencer après la fin de " + other_task.name)
+                                mdl.add(mdl.end_before_start(other_task, task))
+        #print("##############################################")
+        for task in MS2_vars:
+            for i in range(len(self.req_taskEST)):
+                if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
+                    for j in range(len(self.req_taskEST.iloc[i, 0])):
+                        for other_task in EAST_vars:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                                #print(task.name + " doit commencer après la fin de " + other_task.name)
+                                mdl.add(mdl.end_before_start(other_task, task))
+        #print("##############################################")
+        for task in MS3_vars:
+            for i in range(len(self.req_taskEST)):
+                if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
+                    for j in range(len(self.req_taskEST.iloc[i, 0])):
+                        for other_task in EAST_vars:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                                #print(task.name + " doit commencer après la fin de " + other_task.name)
+                                mdl.add(mdl.end_before_start(other_task, task))
+        #print("##############################################")
+        for task in FOV_vars:
+            for i in range(len(self.req_taskEST)):
+                if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
+                    for j in range(len(self.req_taskEST.iloc[i, 0])):
+                        for other_task in EAST_vars:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                                #print(task.name + " doit commencer après la fin de " + other_task.name)
+                                mdl.add(mdl.end_before_start(other_task, task))
         
-    def extract_datas():
-        Extract_data.extract_tasks_from_excel()
+        ##############################################
+        # Adding resources constraints
+        ##############################################
+
+        all_tasks = EAST_vars + WEST_vars
+
+        meca_resources = [mdl.pulse(task, 1) for task in EAST_vars if "meca" in task.name]
+        meca_resources += [mdl.pulse(task, 1) for task in WEST_vars if "meca" in task.name]
+        qc_resources = [mdl.pulse(task, 1) for task in EAST_vars if "qc" in task.name]
+        qc_resources += [mdl.pulse(task, 1) for task in WEST_vars if "qc" in task.name]
+        work_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if ("qc" in task.name or "meca" in task.name)]
+        work_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if ("qc" in task.name or "meca" in task.name)]
+        kitting_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if "kitting" in task.name]
+        kitting_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "kitting" in task.name]
+
+        mdl.add(mdl.sum(meca_resources) <= 3)
+        mdl.add(mdl.sum(qc_resources) <= 1)
+        mdl.add(mdl.sum(work_slots_EAST) <= 2)
+        mdl.add(mdl.sum(work_slots_WEST) <= 2)
+        mdl.add(mdl.sum(kitting_slots_EAST) <= 3)
+        mdl.add(mdl.sum(kitting_slots_WEST) <= 3)
+
+        mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
+
+        print(mdl.export_model())
+
+        #print(mdl.refine_conflict())
+        print("Solving model....")
+        msol = mdl.solve(FailLimit=100000, TimeLimit=100, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        print("Solution: ")
+        msol.print_solution()
+
+
+
+
+    def print_interval_vars_list(self, list):
+        for i in range(len(list)):
+            print(str(list[i]) + ", soit une durée de " + str(list[i].get_length()[0]/3600) + " heures")
+
+    def convert_to_absolute_time(self, timestamp):
+        #print(timestamp)
+        #print(self.start_date)
+        #print(timestamp.timestamp() - self.start_date.timestamp())
+        return timestamp.timestamp() - self.start_date.timestamp()
+
+    def print_OUEST(self):
+        max_rows = None
+        max_cols = None
+        pd.set_option("display.max_rows", max_rows, "display.max_columns", max_cols)
+        #print(self.timeOUEST)
+        #print(self.timeOUEST.index)
+        print(self.req_matOUEST)
+        #print(self.req_taskOUEST)
+
+    def print_EST(self):
+        max_rows = None
+        max_cols = None
+        pd.set_option("display.max_rows", max_rows, "display.max_columns", max_cols)
+        #print(self.timeEST)
+        #print(self.req_matEST)
+        #print(self.req_taskEST)
         
-        
-        
-# =============================================================================
-# if name == "__main__":
-#     #sys.path.append('./src')
-#     ppc = SolveurPPC()
-#     print(ppc.extract_datas())
-#         
-# =============================================================================
+
         
