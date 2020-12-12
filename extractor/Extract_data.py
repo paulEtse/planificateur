@@ -60,3 +60,18 @@ def extract_tasks_from_excel(path):
 
 
     return(time,req_mat,req_task)
+
+
+def add_next2req_task(req_task):
+    req_task['next'] = None
+    for index, row in req_task.iterrows():
+        if len(row['tasks_req']) > 0:
+            for new_index in row['tasks_req']:
+                old = req_task.loc[new_index, 'next']
+                if old is None:
+                    req_task.loc[new_index, 'next'] = [index]
+                else:
+                    l = list(old)
+                    l.append(index)
+                    req_task.loc[new_index, 'next'] = l
+    return req_task
