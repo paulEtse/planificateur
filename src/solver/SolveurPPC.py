@@ -16,7 +16,9 @@ class SolveurPPC:
         self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
         self.start_date = pd.Timestamp(year = 2019, month = 12, day = 12)
         self.max_end_timestamp = int(self.convert_to_absolute_time(pd.Timestamp(year = 2020, month = 1, day = 15)))
-        self.kitting_time = 3 * 3600
+        self.kitting_time_max = 3 * 3600
+        self.kitting_time_mid = int(1.5 * 3600)
+        self.kitting_time_min = 3600
   
     def solve_from_skratch(self):
         print("")
@@ -33,24 +35,46 @@ class SolveurPPC:
         MS4_vars = []
         GTW_vars = []
         WEST_vars = []
+
+        kits_pulse_for_choice = []
         for i in range(len(self.timeOUEST)):
             #min_start_time = int(max(0, self.convert_to_absolute_time(self.req_matOUEST.iloc[i,2])))
             min_start_time = int(self.convert_to_absolute_time(self.req_matOUEST.iloc[i,2]))
             meca_length = self.timeOUEST.iloc[i, 2] * 60
             qc_length = self.timeOUEST.iloc[i, 3] * 60
 
-            kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time, name = "kitting " + self.timeOUEST.index[i])
+            kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), name = "kitting " + self.timeOUEST.index[i])
+            kit_interval1mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_max, name = "kitting 1 op " + self.timeOUEST.index[i], optional = True)
+            kit_interval2mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_mid, name = "kitting 2 op " + self.timeOUEST.index[i], optional = True)
+            kit_interval3mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_min, name = "kitting 3 op " + self.timeOUEST.index[i], optional = True)
+
+            mdl.add(mdl.alternative(interval = kit_interval, array = [kit_interval1mec, kit_interval2mec, kit_interval3mec]))
+
+            kits_pulse_for_choice += [kit_interval1mec, kit_interval2mec, kit_interval3mec]
+
             meca_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = meca_length, name = "meca " + self.timeOUEST.index[i])
             qc_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = qc_length, name = "qc " + self.timeOUEST.index[i])
+
+            # mdl.add(mdl.end_before_start(kit_interval1mec, meca_interval))
+            # mdl.add(mdl.end_before_start(kit_interval2mec, meca_interval))
+            # mdl.add(mdl.end_before_start(kit_interval3mec, meca_interval))
 
             mdl.add(mdl.end_before_start(kit_interval, meca_interval))
             mdl.add(mdl.end_before_start(meca_interval, qc_interval))
 
+            # WEST_vars += [kit_interval1mec]
+            # WEST_vars += [kit_interval2mec]
+            # WEST_vars += [kit_interval3mec]
+            
             WEST_vars += [kit_interval]
             WEST_vars += [meca_interval]
             WEST_vars += [qc_interval]
 
             if i < 19:
+
+                # MS1_vars += [kit_interval1mec]
+                # MS1_vars += [kit_interval2mec]
+                # MS1_vars += [kit_interval3mec]
 
                 MS1_vars += [kit_interval]
                 MS1_vars += [meca_interval]
@@ -58,11 +82,19 @@ class SolveurPPC:
 
             elif i >= 45:
 
+                # GTW_vars += [kit_interval1mec]
+                # GTW_vars += [kit_interval2mec]
+                # GTW_vars += [kit_interval3mec]
+
                 GTW_vars += [kit_interval]
                 GTW_vars += [meca_interval]
                 GTW_vars += [qc_interval]
             
             else:
+
+                # MS4_vars += [kit_interval1mec]
+                # MS4_vars += [kit_interval2mec]
+                # MS4_vars += [kit_interval3mec]
 
                 MS4_vars += [kit_interval]
                 MS4_vars += [meca_interval]
@@ -88,12 +120,28 @@ class SolveurPPC:
             meca_length = self.timeEST.iloc[i, 2] * 60
             qc_length = self.timeEST.iloc[i, 3] * 60
             
-            kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time, name = "kitting " + self.timeEST.index[i])
+            kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), name = "kitting " + self.timeEST.index[i])
+            kit_interval1mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_max, name = "kitting 1 op " + self.timeEST.index[i], optional = True)
+            kit_interval2mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_mid, name = "kitting 2 op " + self.timeEST.index[i], optional = True)
+            kit_interval3mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_min, name = "kitting 3 op " + self.timeEST.index[i], optional = True)
+
+            mdl.add(mdl.alternative(interval = kit_interval, array = [kit_interval1mec, kit_interval2mec, kit_interval3mec]))
+
+            kits_pulse_for_choice += [kit_interval1mec, kit_interval2mec, kit_interval3mec]
+
             meca_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = meca_length, name = "meca " + self.timeEST.index[i])
             qc_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = qc_length, name = "qc " + self.timeEST.index[i])
 
+            # mdl.add(mdl.end_before_start(kit_interval1mec, meca_interval))
+            # mdl.add(mdl.end_before_start(kit_interval2mec, meca_interval))
+            # mdl.add(mdl.end_before_start(kit_interval3mec, meca_interval))
+
             mdl.add(mdl.end_before_start(kit_interval, meca_interval))
             mdl.add(mdl.end_before_start(meca_interval, qc_interval))
+
+            # EAST_vars += [kit_interval1mec]
+            # EAST_vars += [kit_interval2mec]
+            # EAST_vars += [kit_interval3mec]
 
             EAST_vars += [kit_interval]
             EAST_vars += [meca_interval]
@@ -101,17 +149,29 @@ class SolveurPPC:
             
             if i < 11:
                
+                # FOV_vars += [kit_interval1mec]
+                # FOV_vars += [kit_interval2mec]
+                # FOV_vars += [kit_interval3mec]
+
                 FOV_vars += [kit_interval]
                 FOV_vars += [meca_interval]
                 FOV_vars += [qc_interval]
 
             elif i >= 25:
 
+                # MS3_vars += [kit_interval1mec]
+                # MS3_vars += [kit_interval2mec]
+                # MS3_vars += [kit_interval3mec]
+
                 MS3_vars += [kit_interval]
                 MS3_vars += [meca_interval]
                 MS3_vars += [qc_interval]
 
             else:
+
+                # MS2_vars += [kit_interval1mec]
+                # MS2_vars += [kit_interval2mec]
+                # MS2_vars += [kit_interval3mec]
 
                 MS2_vars += [kit_interval]
                 MS2_vars += [meca_interval]
@@ -131,7 +191,7 @@ class SolveurPPC:
                 if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
-                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
@@ -140,7 +200,7 @@ class SolveurPPC:
                 if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
-                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
@@ -149,7 +209,7 @@ class SolveurPPC:
                 if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
-                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
@@ -158,7 +218,7 @@ class SolveurPPC:
                 if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
-                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
@@ -167,7 +227,7 @@ class SolveurPPC:
                 if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
-                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
@@ -176,7 +236,7 @@ class SolveurPPC:
                 if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
-                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         
@@ -188,10 +248,16 @@ class SolveurPPC:
 
         meca_resources = [mdl.pulse(task, 1) for task in EAST_vars if "meca" in task.name]
         meca_resources += [mdl.pulse(task, 1) for task in WEST_vars if "meca" in task.name]
+        meca_resources += [mdl.pulse(task, 1) for task in kits_pulse_for_choice if "kitting 1 op" in task.name]
+        meca_resources += [mdl.pulse(task, 2) for task in kits_pulse_for_choice if "kitting 2 op" in task.name]
+        meca_resources += [mdl.pulse(task, 3) for task in kits_pulse_for_choice if "kitting 3 op" in task.name]
+
         qc_resources = [mdl.pulse(task, 1) for task in EAST_vars if "qc" in task.name]
         qc_resources += [mdl.pulse(task, 1) for task in WEST_vars if "qc" in task.name]
-        work_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if ("qc" in task.name or "meca" in task.name)]
-        work_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if ("qc" in task.name or "meca" in task.name)]
+
+        work_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if "qc" in task.name or "meca" in task.name]
+        work_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "qc" in task.name or "meca" in task.name]
+
         kitting_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if "kitting" in task.name]
         kitting_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "kitting" in task.name]
 
@@ -202,13 +268,16 @@ class SolveurPPC:
         mdl.add(mdl.sum(kitting_slots_EAST) <= 3)
         mdl.add(mdl.sum(kitting_slots_WEST) <= 3)
 
+        [mdl.add(mdl.start_of(task) % 50400 < 39600) for task in all_tasks if "meca" in task.name]
+        [mdl.add(mdl.start_of(task) % 50400 >= 0) for task in all_tasks if "meca" in task.name]
+
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
         print(mdl.export_model())
 
         #print(mdl.refine_conflict())
         print("Solving model....")
-        msol = mdl.solve(FailLimit=100000, TimeLimit=100, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        msol = mdl.solve(FailLimit=100000, TimeLimit=100)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         print("Solution: ")
         msol.print_solution()
 
