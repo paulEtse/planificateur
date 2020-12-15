@@ -4,6 +4,7 @@ from docplex.cp.model import CpoModel, CpoStepFunction, INTERVAL_MIN, INTERVAL_M
 import docplex.cp.utils_visu as visu
 import os
 from extractor import Extract_data
+import random
 from src import Solution
 import sys
 import pandas as pd
@@ -293,89 +294,33 @@ class SolveurPPC:
 
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        msol = mdl.solve(FailLimit = 1000000, TimeLimit = 10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        msol = mdl.solve(FailLimit = 10000000, TimeLimit = 10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #print("Solution: ")
-        #msol.print_solution()
+        msol.print_solution()
 
         intervals = msol.get_all_var_solutions()
         intervals = [solution for solution in intervals if solution.is_present()]
 
-        sol = pd.DataFrame(index = [s.get_name() for s in intervals], columns = ["Task", "Start_time", "End_time", "Operator"])
-
+        sol = pd.DataFrame(columns = ["Task", "Start_time","End_time", "Part"] )
+        print(sol)
         intervals.sort(key = self.get_start)
 
-        for ind in sol.index:
-            sol.loc[ind, "Task"] = ind
-            sol.loc[ind, "Operator"] = []
-
-        print(sol)
         
-        next_time_free = [0, 0, 0, 0]
+        r = lambda: random.randint(0,255)
+        colors = ['#%02X%02X%02X' % (r(),r(),r())]
+        i=0
         for solution in intervals:
             name = solution.get_name()
-            if "kitting" in name:
-                k = 0
-                if "1 op" in name:
-                    while(k < 1):
-                        for i in range(len(next_time_free) - 1):
-                            if next_time_free[i] <= solution.get_start():
-                                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
-                                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
-                                sol.loc[name, "Operator"].extend([i])
-                                break
-                        k += 1
-                if "2 op" in name:
-                    while(k < 2):
-                        for i in range(len(next_time_free) - 1):
-                            if next_time_free[i] <= solution.get_start():
-                                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
-                                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
-                                sol.loc[name, "Operator"].extend([i])
-                                break
-                        k += 1
-                if "3 op" in name:
-                    while(k < 3):
-                        for i in range(len(next_time_free) - 1):
-                            if next_time_free[i] <= solution.get_start():
-                                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
-                                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
-                                sol.loc[name, "Operator"].extend([i])
-                                break
-                        k += 1
-            elif "meca" in name:
-                    for i in range(len(next_time_free) - 1):
-                        if next_time_free[i] <= solution.get_start():
-                            sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
-                            sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
-                            sol.loc[name, "Operator"].extend([i])
-                            break
-            else:
-                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
-                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
-                sol.loc[name, "Operator"].extend([4])
+            if not "op" in name : 
+                sol.loc[i] = [name[-6:],  datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start())), datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end())), name ]
+                colors.append('#%02X%02X%02X' % (r(),r(),r()))
+                i+=1
 
-        print(sol)
 
-        # # fig = ff.create_gantt(sol)
-        # # fig.show()
-
-        # fig = px.timeline(sol, x_start="Start_time", x_end="End_time", y="Task")
-        # fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
-        # fig.show()
-
-        # df = pd.DataFrame([
-        #     dict(Task="Job A", Start='2009-01-01', Finish='2009-02-28'),
-        #     dict(Task="Job B", Start='2009-03-05', Finish='2009-04-15'),
-        #     dict(Task="Job C", Start='2009-02-20', Finish='2009-05-30')
-        # ])
-
-        # fig = px.timeline(df, x_start="Start", x_end="Finish", y="Task")
-        # fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
-        # fig.show()
-
-        fig = px.timeline(sol, x_start="Start_time", x_end="End_time", y="Operator")
-        fig.update_yaxes(autorange="reversed")
-        fig.write_image("../fig1.pdf")
+        sol["Start"] = sol["Start_time"]
+        sol["Finish"] = sol["End_time"]
+        fig = ff.create_gantt(sol, colors=colors,index_col='Part',show_colorbar=True, group_tasks=True)
+        fig.write_html("./fig.html")
 
 
     def get_start(self, sol):
