@@ -204,55 +204,55 @@ class SolveurPPC:
         ##################################################
         for task in MS1_vars:
             for i in range(len(self.req_taskOUEST)):
-                if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
+                if (self.req_taskOUEST.index[i] in task.name) and "meca" in task.name:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
-                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in MS4_vars:
             for i in range(len(self.req_taskOUEST)):
-                if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
+                if (self.req_taskOUEST.index[i] in task.name) and "meca" in task.name:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
-                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in GTW_vars:
             for i in range(len(self.req_taskOUEST)):
-                if (self.req_taskOUEST.index[i] in task.name) and "kitting" in task.name:
+                if (self.req_taskOUEST.index[i] in task.name) and "meca" in task.name:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
-                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
+                            if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in MS2_vars:
             for i in range(len(self.req_taskEST)):
-                if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
+                if (self.req_taskEST.index[i] in task.name) and "meca" in task.name:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
-                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in MS3_vars:
             for i in range(len(self.req_taskEST)):
-                if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
+                if (self.req_taskEST.index[i] in task.name) and "meca" in task.name:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
-                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in FOV_vars:
             for i in range(len(self.req_taskEST)):
-                if (self.req_taskEST.index[i] in task.name) and "kitting" in task.name:
+                if (self.req_taskEST.index[i] in task.name) and "meca" in task.name:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
-                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "meca" in other_task.name:
+                            if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         
