@@ -7,8 +7,11 @@ from extractor import Extract_data
 from src import Solution
 import sys
 import pandas as pd
-
-
+import plotly.express as px
+from datetime import datetime
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
+import plotly.io as pio
 
 class SolveurPPC:  
     def __init__(self):
@@ -19,9 +22,22 @@ class SolveurPPC:
         self.kitting_time_max = 3 * 3600
         self.kitting_time_mid = int(1.5 * 3600)
         self.kitting_time_min = 3600
+        pio.renderers.default = "vscode"
   
     def solve_from_skratch(self):
         print("")
+
+    def print_gantt(self, solution):
+        pass
+
+    # def run_server(self, 
+    #             port=8050, 
+    #             debug=False, 
+    #             threaded=True, 
+    #             **flask_run_options): 
+    #     self.server.run(port=port, debug=debug, **flask_run_options) 
+
+    
               
     def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
@@ -184,7 +200,7 @@ class SolveurPPC:
         # self.print_interval_vars_list(MS3_vars)
 
         ##################################################
-        # Setting relations between interval variables
+        # Setting requirement relations between interval variables
         ##################################################
         for task in MS1_vars:
             for i in range(len(self.req_taskOUEST)):
@@ -276,12 +292,94 @@ class SolveurPPC:
         print(mdl.export_model())
 
         #print(mdl.refine_conflict())
-        print("Solving model....")
-        msol = mdl.solve(FailLimit=100000, TimeLimit=100)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
-        print("Solution: ")
-        msol.print_solution()
+        #print("Solving model....")
+        msol = mdl.solve(FailLimit = 1000000, TimeLimit = 10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        #print("Solution: ")
+        #msol.print_solution()
+
+        intervals = msol.get_all_var_solutions()
+        intervals = [solution for solution in intervals if solution.is_present()]
+
+        sol = pd.DataFrame(index = [s.get_name() for s in intervals], columns = ["Task", "Start_time", "End_time", "Operator"])
+
+        intervals.sort(key = self.get_start)
+
+        for ind in sol.index:
+            sol.loc[ind, "Task"] = ind
+            sol.loc[ind, "Operator"] = []
+
+        print(sol)
+        
+        next_time_free = [0, 0, 0, 0]
+        for solution in intervals:
+            name = solution.get_name()
+            if "kitting" in name:
+                k = 0
+                if "1 op" in name:
+                    while(k < 1):
+                        for i in range(len(next_time_free) - 1):
+                            if next_time_free[i] <= solution.get_start():
+                                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
+                                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
+                                sol.loc[name, "Operator"].extend([i])
+                                break
+                        k += 1
+                if "2 op" in name:
+                    while(k < 2):
+                        for i in range(len(next_time_free) - 1):
+                            if next_time_free[i] <= solution.get_start():
+                                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
+                                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
+                                sol.loc[name, "Operator"].extend([i])
+                                break
+                        k += 1
+                if "3 op" in name:
+                    while(k < 3):
+                        for i in range(len(next_time_free) - 1):
+                            if next_time_free[i] <= solution.get_start():
+                                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
+                                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
+                                sol.loc[name, "Operator"].extend([i])
+                                break
+                        k += 1
+            elif "meca" in name:
+                    for i in range(len(next_time_free) - 1):
+                        if next_time_free[i] <= solution.get_start():
+                            sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
+                            sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
+                            sol.loc[name, "Operator"].extend([i])
+                            break
+            else:
+                sol.loc[name, "Start_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start()))
+                sol.loc[name, "End_time"] = datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end()))
+                sol.loc[name, "Operator"].extend([4])
+
+        print(sol)
+
+        # # fig = ff.create_gantt(sol)
+        # # fig.show()
+
+        # fig = px.timeline(sol, x_start="Start_time", x_end="End_time", y="Task")
+        # fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
+        # fig.show()
+
+        # df = pd.DataFrame([
+        #     dict(Task="Job A", Start='2009-01-01', Finish='2009-02-28'),
+        #     dict(Task="Job B", Start='2009-03-05', Finish='2009-04-15'),
+        #     dict(Task="Job C", Start='2009-02-20', Finish='2009-05-30')
+        # ])
+
+        # fig = px.timeline(df, x_start="Start", x_end="Finish", y="Task")
+        # fig.update_yaxes(autorange="reversed") # otherwise tasks are listed from the bottom up
+        # fig.show()
+
+        fig = px.timeline(sol, x_start="Start_time", x_end="End_time", y="Operator")
+        fig.update_yaxes(autorange="reversed")
+        fig.write_image("../fig1.pdf")
 
 
+    def get_start(self, sol):
+        return sol.get_start()
 
 
     def print_interval_vars_list(self, list):
@@ -293,6 +391,10 @@ class SolveurPPC:
         #print(self.start_date)
         #print(timestamp.timestamp() - self.start_date.timestamp())
         return timestamp.timestamp() - self.start_date.timestamp()
+
+    def convert_to_normal_time(self, timestamp):
+
+        return timestamp + self.start_date.timestamp()
 
     def print_OUEST(self):
         max_rows = None
