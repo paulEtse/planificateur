@@ -303,7 +303,7 @@ class SolveurPPC:
 
         sol = pd.DataFrame(columns = ["Task", "Start_time","End_time", "Part"] )
         print(sol)
-        intervals.sort(key = self.get_start)
+        #intervals.sort(key = self.get_start)
 
         
         r = lambda: random.randint(0,255)
