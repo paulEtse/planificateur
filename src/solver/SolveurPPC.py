@@ -311,7 +311,7 @@ class SolveurPPC:
 
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        msol = mdl.solve(FailLimit = 10000000, TimeLimit = 10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        msol = mdl.solve(FailLimit = 10000000, TimeLimit = 30*60)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #print("Solution: ")
         msol.print_solution()
 
@@ -349,13 +349,14 @@ class SolveurPPC:
             print(str(list[i]) + ", soit une durée de " + str(list[i].get_length()[0]/3600) + " heures")
 
     def convert_to_absolute_time(self, timestamp):
-        #print(timestamp)
-        #print(self.start_date)
-        #print(timestamp.timestamp() - self.start_date.timestamp())
+        # TODO
+        # retrourne le nombre de seconde travaillable a 14h/j entre timestamp et soit 1970 soit un fixe une date (01.12.2019)
+        # garde une date en argument de la fonction car tu devras utiliser isoweekday() par exemple
         return timestamp.timestamp() - self.start_date.timestamp()
 
     def convert_to_normal_time(self, timestamp):
-
+        # TODO
+        # retourne la date normale a partie d'une date du probleme 
         return timestamp + self.start_date.timestamp()
 
     def print_OUEST(self):
