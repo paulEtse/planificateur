@@ -51,6 +51,7 @@ class SolveurPPC:
         MS4_vars = []
         GTW_vars = []
         WEST_vars = []
+        table_occupied_WEST = []
 
         kits_pulse_for_choice = []
         for i in range(len(self.timeOUEST)):
@@ -75,8 +76,14 @@ class SolveurPPC:
             # mdl.add(mdl.end_before_start(kit_interval2mec, meca_interval))
             # mdl.add(mdl.end_before_start(kit_interval3mec, meca_interval))
 
+            table_slot_occupied_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = (0, 9999999999999), name = "Table occupied " + self.timeOUEST.index[i])
+            table_occupied_WEST += [table_slot_occupied_interval]
+
             mdl.add(mdl.end_before_start(kit_interval, meca_interval))
             mdl.add(mdl.end_before_start(meca_interval, qc_interval))
+
+            mdl.add(mdl.start_at_end(table_slot_occupied_interval, kit_interval))
+            mdl.add(mdl.start_at_end(meca_interval, table_slot_occupied_interval))
 
             # WEST_vars += [kit_interval1mec]
             # WEST_vars += [kit_interval2mec]
@@ -130,6 +137,8 @@ class SolveurPPC:
         MS2_vars = []
         MS3_vars = []
         EAST_vars = []
+        table_occupied_EAST = []
+
         for i in range(len(self.timeEST)):
             #min_start_time = int(max(0, self.convert_to_absolute_time(self.req_matEST.iloc[i,2])))
             min_start_time = int(self.convert_to_absolute_time(self.req_matEST.iloc[i,2]))
@@ -152,8 +161,14 @@ class SolveurPPC:
             # mdl.add(mdl.end_before_start(kit_interval2mec, meca_interval))
             # mdl.add(mdl.end_before_start(kit_interval3mec, meca_interval))
 
+            table_slot_occupied_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = (0, 9999999999999), name = "Table occupied " + self.timeEST.index[i])
+            table_occupied_EAST += [table_slot_occupied_interval]
+
             mdl.add(mdl.end_before_start(kit_interval, meca_interval))
             mdl.add(mdl.end_before_start(meca_interval, qc_interval))
+
+            mdl.add(mdl.start_at_end(table_slot_occupied_interval, kit_interval))
+            mdl.add(mdl.start_at_end(meca_interval, table_slot_occupied_interval))
 
             # EAST_vars += [kit_interval1mec]
             # EAST_vars += [kit_interval2mec]
@@ -274,8 +289,10 @@ class SolveurPPC:
         work_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if "qc" in task.name or "meca" in task.name]
         work_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "qc" in task.name or "meca" in task.name]
 
-        kitting_slots_EAST = [mdl.pulse(task, 1) for task in EAST_vars if "kitting" in task.name]
-        kitting_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "kitting" in task.name]
+        kitting_slots_EAST = [mdl.pulse(task, 1) for task in table_occupied_EAST]
+        kitting_slots_WEST = [mdl.pulse(task, 1) for task in table_occupied_WEST]
+
+
 
         mdl.add(mdl.sum(meca_resources) <= 3)
         mdl.add(mdl.sum(qc_resources) <= 1)
