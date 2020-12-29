@@ -1,5 +1,5 @@
 from src.task import State, Task
-from src.holidays import end_date_calc
+from src.date_converter import end_date_calc
 import datetime
 
 class Work:
