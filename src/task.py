@@ -4,7 +4,6 @@ from enum import Enum
 
 from src.holidays_m import end_date_calc
 
-
 class State(Enum):
     not_started = 0
     finished = 1
@@ -68,7 +67,7 @@ class Task:
         endTime = end_date_calc(self.oc_start, datetime.timedelta(minutes=self.oc))
         self.oc_end = endTime
         resource.next_freeTime = endTime
-        self.block.module.inc(self.oc_start, resource.next_freeTime)
+        self.block.module.inc(self.oc_start, endTime)
         for t in self.next:
             t.pending_prec = t.pending_prec - 1
         #print("oc " +self.name)

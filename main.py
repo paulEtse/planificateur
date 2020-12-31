@@ -35,7 +35,8 @@ est.addBloc(ms2)
 est.addBloc(ms3)
 est.addBloc(fov)
 
-
+def choose_best_meca_using_req(tasks, control):
+    raise NotImplemented
 def choose_best_oc_task(tasks, control):
     # Task that can be done
     filtered_tasks = list(filter(lambda t: t.block.module.can_work(max(t.oc_start, control.next_freeTime),
@@ -45,7 +46,9 @@ def choose_best_oc_task(tasks, control):
                                  tasks))
     filtered_tasks.sort(key = lambda t: max(t.oc_start, control.next_freeTime))
     if len(filtered_tasks) == 0:
-        raise Exception
+        1/1
+        return None
+        #raise Exception
     # Order by starttime
     return filtered_tasks[0]
 
@@ -58,7 +61,9 @@ def choose_best_meca_task(tasks, mecanic):
                                                                        datetime.timedelta(minutes=t.meca))), tasks))
     filtered_tasks.sort(key = lambda t: max(t.meca_start, mecanic.next_freeTime))
     if len(filtered_tasks) == 0:
-        raise Exception
+        1/1
+        return None
+        #raise Exception
     # Order by starttime
     return filtered_tasks[0]
 
@@ -138,6 +143,11 @@ while len(ready_to_do) != 0:
             mecanic = mecanics[iter]
             iter = iter + 1
             task = choose_best_meca_task(remaining_meca_tasks, mecanic)
+            if iter == len(mecanics) && task == None:
+                mecanic = mecanics[0]
+                # Todo 
+                task = choose_best_meca_using_req()
+                # do the task at best start from Module
 
         # Do meca task found
         if task is not None:
@@ -164,6 +174,12 @@ while len(ready_to_do) != 0:
 for sol in solution:
     print(sol)
 print(len(solution))
+
+
+#Check
+est.check()
+ouest.check()
+
 # Build a solution based on ResourceOrder solution of jobshop
 # Solve it
 # Display solution

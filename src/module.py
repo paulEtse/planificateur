@@ -24,13 +24,12 @@ class Module:
         return self.nb_op[index]
 
     def can_work(self, start_ , to):
-        answer = True
         start_index = int((start_ - self.start).total_seconds() / 60)
         end_index = int((to - self.start).total_seconds() / 60)
         i = start_index
         while(i <= end_index and self.nb_op[i] < 2):
             i=i+1
-        return answer
+        return self.nb_op[i] > 2
 
     def best_start(self, start_):
         index = int((start_ - self.start).total_seconds() / 60)
@@ -38,3 +37,7 @@ class Module:
         while self.nb_op[i] >= 2 or isHolliday(self.start + datetime.timedelta(minutes= i)):
             i = i + 1
         return self.start + datetime.timedelta(minutes=i)
+
+    def check(self):
+        for i in self.nb_op:
+            assert (i <= 2)
