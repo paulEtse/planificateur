@@ -8,6 +8,11 @@ def isHolliday(date):
     return date.isoweekday() > 5 or date in fr_holidays
 
 
+def isFreeTime(date):
+    return isHolliday(date) or date < start1_of_date(date) or (end1_of_date(date) < date < start2_of_date(date)) or (
+                date > end2_of_date(date))
+
+
 def start1_of_date(date):
     return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
 

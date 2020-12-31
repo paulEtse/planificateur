@@ -43,7 +43,7 @@ class Task:
         return description
 
     def do_meca(self, resource):
-        self.meca_start = self.block.module.best_start(max(resource.next_freeTime, self.meca_start))
+        self.meca_start = max(resource.next_freeTime, self.meca_start)
         self.state = State.oc
         endTime = end_date_calc(self.meca_start, datetime.timedelta(minutes = (Task.kitting + self.meca)))
         self.oc_start = endTime
@@ -51,7 +51,7 @@ class Task:
         self.block.module.inc(self.meca_start, endTime)
         self.meca_resource = resource
         resource.next_freeTime = endTime
-        #print("meca " +self.name )
+        #print("meca " +self.name)
 
     def __str__(self):
         #return self.name
@@ -62,7 +62,7 @@ class Task:
         return description + "\n"
 
     def do_oc(self, resource):
-        self.oc_start = self.block.module.best_start(max(resource.next_freeTime, self.oc_start))
+        self.oc_start = max(resource.next_freeTime, self.oc_start)
         self.state = State.finished
         endTime = end_date_calc(self.oc_start, datetime.timedelta(minutes=self.oc))
         self.oc_end = endTime

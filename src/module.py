@@ -1,6 +1,6 @@
 import numpy as np
 import datetime
-from src.holidays_m import isHolliday
+from src.holidays_m import end_date_calc
 
 
 class Module:
@@ -27,16 +27,24 @@ class Module:
         start_index = int((start_ - self.start).total_seconds() / 60)
         end_index = int((to - self.start).total_seconds() / 60)
         i = start_index
-        while(i <= end_index and self.nb_op[i] < 2):
+        while i <= end_index and self.nb_op[i] < 2:
             i=i+1
-        return self.nb_op[i] > 2
+        return self.nb_op[i] < 2
 
-    def best_start(self, start_):
-        index = int((start_ - self.start).total_seconds() / 60)
-        i = index
-        while self.nb_op[i] >= 2 or isHolliday(self.start + datetime.timedelta(minutes= i)):
-            i = i + 1
-        return self.start + datetime.timedelta(minutes=i)
+    def best_start(self, start_, duration):
+        start = start_
+        index_1 = int((start - self.start).total_seconds() / 60)
+        end = end_date_calc(start, duration=duration)
+        index_2 = int((end - self.start).total_seconds() / 60)
+        i = index_1
+        while i < index_2:
+            if self.nb_op[i] == 2:
+                start = self.start + datetime.timedelta(minutes=i)
+                end = end_date_calc(start, duration=duration)
+                #index_1 = int((start - self.start).total_seconds() / 60)
+                index_2 = int((end - self.start).total_seconds() / 60)
+            i=i+1
+        return start
 
     def check(self):
         for i in self.nb_op:

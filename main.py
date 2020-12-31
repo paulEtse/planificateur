@@ -35,7 +35,9 @@ est.addBloc(ms2)
 est.addBloc(ms3)
 est.addBloc(fov)
 
-def choose_best_meca_using_req(tasks, control):
+def do_best_meca_using_req(tasks, meca):
+
+
     raise NotImplemented
 def choose_best_oc_task(tasks, control):
     # Task that can be done
@@ -46,7 +48,6 @@ def choose_best_oc_task(tasks, control):
                                  tasks))
     filtered_tasks.sort(key = lambda t: max(t.oc_start, control.next_freeTime))
     if len(filtered_tasks) == 0:
-        1/1
         return None
         #raise Exception
     # Order by starttime
@@ -61,7 +62,6 @@ def choose_best_meca_task(tasks, mecanic):
                                                                        datetime.timedelta(minutes=t.meca))), tasks))
     filtered_tasks.sort(key = lambda t: max(t.meca_start, mecanic.next_freeTime))
     if len(filtered_tasks) == 0:
-        1/1
         return None
         #raise Exception
     # Order by starttime
@@ -139,19 +139,20 @@ while len(ready_to_do) != 0:
     remaining_meca_tasks = list(filter(lambda x: x.state == State.meca, ready_to_do))
     if len(remaining_meca_tasks) > 0:
         #print("remaining_meca_tasks " + str(len(remaining_meca_tasks)))
-        while task is None:
+        while task is None and iter < len(mecanics):
             mecanic = mecanics[iter]
             iter = iter + 1
             task = choose_best_meca_task(remaining_meca_tasks, mecanic)
-            if iter == len(mecanics) && task == None:
-                mecanic = mecanics[0]
-                # Todo 
-                task = choose_best_meca_using_req()
-                # do the task at best start from Module
 
         # Do meca task found
         if task is not None:
             task.do_meca(mecanic)
+
+        if iter == len(mecanics) and task == None:
+            # Todo
+            print("case except")
+            for t in remaining_meca_tasks:
+                t.meca_start = t.block.module.best_start(t.meca_start, datetime.timedelta(minutes=t.meca))
 
     # Try to find an oc task to do
     remaining_oc_tasks = list(filter(lambda x: x.state == State.oc, ready_to_do))
@@ -170,6 +171,10 @@ while len(ready_to_do) != 0:
             # Remove the task done
             ready_to_do.remove(task)
             solution.append(task)
+        else:
+            #print("case except oc")
+            for t in remaining_oc_tasks:
+                t.oc_start = t.block.module.best_start(t.oc_start, datetime.timedelta(minutes=t.oc))
 
 for sol in solution:
     print(sol)
