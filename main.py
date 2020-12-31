@@ -1,4 +1,4 @@
-from src.holidays_m import end_date_calc
+from src.date_converter import end_date_calc
 from src.solver import resourceOrder
 from src.resource import Resource, Rtype
 from src.module import Module
