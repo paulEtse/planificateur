@@ -7,7 +7,7 @@ import pandas as pd
 import math
 import os
 import numpy as np
-from src.holidays_m import end_date_calc, start1_of_date
+from src.date_converter import end_date_calc, start1_of_date
 from src.task import Task, State
 import datetime
 from extractor.Extract_data import pathOUEST, pathEST, extract_tasks_from_excel, add_next2req_task
@@ -178,8 +178,6 @@ while len(ready_to_do) != 0:
 
 for sol in solution:
     print(sol)
-print(len(solution))
-
 
 #Check
 est.check()
