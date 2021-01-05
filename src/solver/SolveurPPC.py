@@ -5,7 +5,7 @@ import docplex.cp.utils_visu as visu
 import os
 from extractor import Extract_data
 import random
-from src import Solution
+from src import Solution, date_converter
 import sys
 import pandas as pd
 import plotly.express as px
@@ -18,28 +18,20 @@ class SolveurPPC:
     def __init__(self):
         self.timeOUEST, self.req_matOUEST, self.req_taskOUEST = Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
         self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
-        self.start_date = pd.Timestamp(year = 2019, month = 12, day = 12)
-        self.max_end_timestamp = int(self.convert_to_absolute_time(pd.Timestamp(year = 2020, month = 1, day = 15)))
-        self.kitting_time_max = 3 * 3600
-        self.kitting_time_mid = int(1.5 * 3600)
-        self.kitting_time_min = 3600
+        self.start_date = datetime.timestamp(datetime(2019,12,1))
+        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
+        self.kitting_time_max = 3 * 6
+        self.kitting_time_mid = int(1.5 * 6)
+        self.kitting_time_min = 6
         pio.renderers.default = "vscode"
-  
+
     def solve_from_skratch(self):
         print("")
 
     def print_gantt(self, solution):
         pass
 
-    # def run_server(self, 
-    #             port=8050, 
-    #             debug=False, 
-    #             threaded=True, 
-    #             **flask_run_options): 
-    #     self.server.run(port=port, debug=debug, **flask_run_options) 
 
-    
-              
     def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
        
@@ -56,10 +48,11 @@ class SolveurPPC:
 
         kits_pulse_for_choice = []
         for i in range(len(self.timeOUEST)):
-            #min_start_time = int(max(0, self.convert_to_absolute_time(self.req_matOUEST.iloc[i,2])))
-            min_start_time = int(self.convert_to_absolute_time(self.req_matOUEST.iloc[i,2]))
-            meca_length = self.timeOUEST.iloc[i, 2] * 60
-            qc_length = self.timeOUEST.iloc[i, 3] * 60
+            #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matOUEST.iloc[i,2])))
+            min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+            print(min_start_time, self.req_matOUEST.iloc[i,2])
+            meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
+            qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
 
             kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), name = "kitting " + self.timeOUEST.index[i])
             kit_interval1mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_max, name = "kitting 1 op " + self.timeOUEST.index[i], optional = True)
@@ -141,10 +134,10 @@ class SolveurPPC:
         table_occupied_EAST = []
 
         for i in range(len(self.timeEST)):
-            #min_start_time = int(max(0, self.convert_to_absolute_time(self.req_matEST.iloc[i,2])))
-            min_start_time = int(self.convert_to_absolute_time(self.req_matEST.iloc[i,2]))
-            meca_length = self.timeEST.iloc[i, 2] * 60
-            qc_length = self.timeEST.iloc[i, 3] * 60
+            #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matEST.iloc[i,2])))
+            min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+            meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
+            qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
             
             kit_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), name = "kitting " + self.timeEST.index[i])
             kit_interval1mec = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = self.kitting_time_max, name = "kitting 1 op " + self.timeEST.index[i], optional = True)
@@ -302,8 +295,8 @@ class SolveurPPC:
         mdl.add(mdl.sum(kitting_slots_EAST) <= 3)
         mdl.add(mdl.sum(kitting_slots_WEST) <= 3)
 
-        [mdl.add(mdl.start_of(task) % 50400 < 39600) for task in all_tasks if "meca" in task.name]
-        [mdl.add(mdl.start_of(task) % 50400 >= 0) for task in all_tasks if "meca" in task.name]
+        [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
+        [mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
 
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
@@ -311,7 +304,7 @@ class SolveurPPC:
 
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        msol = mdl.solve(FailLimit = 10000000, TimeLimit = 10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        msol = mdl.solve(FailLimit = 10000000, TimeLimit = 60*60*24)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #print("Solution: ")
         msol.print_solution()
 
@@ -329,11 +322,11 @@ class SolveurPPC:
         for solution in intervals:
             name = solution.get_name()
             if not "op" in name : 
-                sol.loc[i] = [name[-6:],  datetime.fromtimestamp(self.convert_to_normal_time(solution.get_start())), datetime.fromtimestamp(self.convert_to_normal_time(solution.get_end())), name ]
+                sol.loc[i] = [name[-6:],  datetime.fromtimestamp(date_converter.convert_to_timestamp(solution.get_start())), datetime.fromtimestamp(date_converter.convert_to_timestamp(solution.get_end())), name[:-6] ]
                 colors.append('#%02X%02X%02X' % (r(),r(),r()))
                 i+=1
 
-
+        print(sol)
         sol["Start"] = sol["Start_time"]
         sol["Finish"] = sol["End_time"]
         fig = ff.create_gantt(sol, colors=colors,index_col='Part',show_colorbar=True, group_tasks=True)
@@ -348,15 +341,6 @@ class SolveurPPC:
         for i in range(len(list)):
             print(str(list[i]) + ", soit une durée de " + str(list[i].get_length()[0]/3600) + " heures")
 
-    def convert_to_absolute_time(self, timestamp):
-        #print(timestamp)
-        #print(self.start_date)
-        #print(timestamp.timestamp() - self.start_date.timestamp())
-        return timestamp.timestamp() - self.start_date.timestamp()
-
-    def convert_to_normal_time(self, timestamp):
-
-        return timestamp + self.start_date.timestamp()
 
     def print_OUEST(self):
         max_rows = None
