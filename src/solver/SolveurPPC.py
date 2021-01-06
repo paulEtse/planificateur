@@ -284,9 +284,9 @@ class SolveurPPC:
         work_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "qc" in task.name or "meca" in task.name]
 
         kitting_slots_EAST = [mdl.pulse(task, 1) for task in table_occupied_EAST]
+        kitting_slots_EAST += [mdl.pulse(task, 1) for task in EAST_vars if "kitting" in task.name]
         kitting_slots_WEST = [mdl.pulse(task, 1) for task in table_occupied_WEST]
-
-
+        kitting_slots_WEST += [mdl.pulse(task, 1) for task in WEST_vars if "kitting" in task.name]
 
         mdl.add(mdl.sum(meca_resources) <= 3)
         mdl.add(mdl.sum(qc_resources) <= 1)
