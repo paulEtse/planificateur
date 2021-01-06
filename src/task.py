@@ -14,7 +14,7 @@ class State(Enum):
 
 
 class Task:
-    kitting = 3
+    kitting = 3*60
 
     def __init__(self, name, meca, oc):
         self.state = State.not_started
@@ -45,7 +45,7 @@ class Task:
     def do_meca(self, resource):
         self.meca_start = max(resource.next_freeTime, self.meca_start)
         self.state = State.oc
-        endTime = end_date_calc(self.meca_start, datetime.timedelta(minutes = (Task.kitting + self.meca)))
+        endTime = end_date_calc(self.meca_start, datetime.timedelta(minutes = self.meca))
         self.oc_start = endTime
         self.meca_end = endTime
         self.block.module.inc(self.meca_start, endTime)

@@ -8,7 +8,7 @@ class Module:
         self.name = name
         self.blocs = []
         self.start = None
-        self.nb_op = np.zeros(shape=90 * 24 * 60)
+        self.nb_op = np.zeros(shape=120 * 24 * 60)
 
     def addBloc(self, bloc):
         self.blocs.append(bloc)

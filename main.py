@@ -35,6 +35,17 @@ est.addBloc(ms2)
 est.addBloc(ms3)
 est.addBloc(fov)
 
+def makespan(solution):
+    start_date = solution[0].meca_start
+    end_date = solution[0].oc_end
+    for t in solution:
+        if start_date > t.meca_start:
+            start_date = t.meca_end
+        if end_date < t.oc_end:
+            end_date = t.oc_end
+    print(start_date, end_date)
+    return end_date - start_date
+
 def do_best_meca_using_req(tasks, meca):
 
 
@@ -71,7 +82,7 @@ def choose_best_meca_task(tasks, mecanic):
 def addTask2bloc(time, req_mat, req):
     tasks = []
     for index, row in time.iterrows():
-        t = Task(index, time.loc[index, 'Tps_total'], time.loc[index, 'Tps_QC'])
+        t = Task(index, time.loc[index, 'Tps_total'] + Task.kitting, time.loc[index, 'Tps_QC'])
         t.min_start = req_mat.loc[index, 'Max_livraion']
         tasks.append(t)
         if ms1.name in t.name:
@@ -178,7 +189,7 @@ while len(ready_to_do) != 0:
 
 for sol in solution:
     print(sol)
-
+print("makespan: " + str(makespan(solution)))
 #Check
 est.check()
 ouest.check()
