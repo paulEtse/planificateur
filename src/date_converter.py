@@ -90,7 +90,7 @@ def convert_to_work_time(ts):
             else:
                 time_to_return += 2*7*6
                 cur_date += datetime.timedelta(days = 1)
-        return(time_to_return)
+        return(time_to_return + int((goal_date - cur_date).seconds /600))
 
 
 
