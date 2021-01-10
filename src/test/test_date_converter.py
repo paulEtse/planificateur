@@ -1,6 +1,6 @@
 import sys
 sys.path.append("..")
-from src.holidays_m import *
+from src.date_converter import *
 
 
 # Test end_date_calc

@@ -1,6 +1,7 @@
 #import SolverInterface
 from docplex.cp.modeler import end_before_start
 from docplex.cp.model import CpoModel, CpoStepFunction, INTERVAL_MIN, INTERVAL_MAX
+from docplex.cp.parameters import CpoParameters
 import docplex.cp.utils_visu as visu
 import os
 from extractor import Extract_data
@@ -284,9 +285,9 @@ class SolveurPPC:
         work_slots_WEST = [mdl.pulse(task, 1) for task in WEST_vars if "qc" in task.name or "meca" in task.name]
 
         kitting_slots_EAST = [mdl.pulse(task, 1) for task in table_occupied_EAST]
+        kitting_slots_EAST += [mdl.pulse(task, 1) for task in EAST_vars if "kitting" in task.name]
         kitting_slots_WEST = [mdl.pulse(task, 1) for task in table_occupied_WEST]
-
-
+        kitting_slots_WEST += [mdl.pulse(task, 1) for task in WEST_vars if "kitting" in task.name]
 
         mdl.add(mdl.sum(meca_resources) <= 3)
         mdl.add(mdl.sum(qc_resources) <= 1)
@@ -296,15 +297,54 @@ class SolveurPPC:
         mdl.add(mdl.sum(kitting_slots_WEST) <= 3)
 
         [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
-        [mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
+        #[mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
+
+        mdl.add(mdl.no_overlap(MS1_vars))
+        mdl.add(mdl.no_overlap(MS2_vars))
+        mdl.add(mdl.no_overlap(MS3_vars))
+        mdl.add(mdl.no_overlap(MS4_vars))
+        mdl.add(mdl.no_overlap(FOV_vars))
+        mdl.add(mdl.no_overlap(GTW_vars))
 
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
         print(mdl.export_model())
 
+        strategies = []
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
+
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        msol = mdl.solve(FailLimit = 10000000, TimeLimit = 60*60*24)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        params = CpoParameters(TimeLimit=60*60*1, LogPeriod=100000, SearchType="DepthFirst")
+        mdl.add_search_phase(strategies[7])
+        msol = mdl.solve(TimeLimit = 60*60*10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        msol = run(mdl, params)
         #print("Solution: ")
         msol.print_solution()
 
