@@ -95,7 +95,7 @@ def convert_to_work_time(ts):
 
 def convert_to_timestamp(worktime):
     if worktime == 0:
-        return(startdate)
+        return(datetime.datetime.timestamp(startdate))
     else:
         date_to_return = startdate
         copy = worktime

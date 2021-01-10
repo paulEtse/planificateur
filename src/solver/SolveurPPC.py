@@ -341,35 +341,20 @@ class SolveurPPC:
 
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        params = CpoParameters(TimeLimit=60*60*1, LogPeriod=100000, SearchType="DepthFirst")
+        time = 15§
+        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
         mdl.add_search_phase(strategies[7])
-        msol = mdl.solve(TimeLimit = 60*60*10)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
-        msol = run(mdl, params)
+        msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        #msol = run(mdl, params)
         #print("Solution: ")
         msol.print_solution()
+        
+        
 
-        intervals = msol.get_all_var_solutions()
-        intervals = [solution for solution in intervals if solution.is_present()]
-
-        sol = pd.DataFrame(columns = ["Task", "Start_time","End_time", "Part"] )
-        print(sol)
-        #intervals.sort(key = self.get_start)
-
-        r = lambda: random.randint(0,255)
-        colors = ['#%02X%02X%02X' % (r(),r(),r())]
-        i=0
-        for solution in intervals:
-            name = solution.get_name()
-            if not "op" in name : 
-                sol.loc[i] = [name[-6:],  datetime.fromtimestamp(date_converter.convert_to_timestamp(solution.get_start())), datetime.fromtimestamp(date_converter.convert_to_timestamp(solution.get_end())), name[:-6] ]
-                colors.append('#%02X%02X%02X' % (r(),r(),r()))
-                i+=1
-
-        print(sol)
-        sol["Start"] = sol["Start_time"]
-        sol["Finish"] = sol["End_time"]
-        fig = ff.create_gantt(sol, colors=colors,index_col='Part',show_colorbar=True, group_tasks=True)
-        fig.write_html("./fig.html")
+        solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
+        print(solution)
+        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec")
+        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec")
 
 
     def get_start(self, sol):
