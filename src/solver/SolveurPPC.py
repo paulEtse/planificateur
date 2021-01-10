@@ -341,7 +341,7 @@ class SolveurPPC:
 
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        time = 15§
+        time = 15
         params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
         mdl.add_search_phase(strategies[7])
         msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
