@@ -79,6 +79,7 @@ def convert_to_work_time(ts):
         #print("return 0")
         return(0)
     else:
+        print("Wow : ",ts)
         goal_date = datetime.datetime.fromtimestamp(ts)
         cur_date = startdate
         time_to_return = 0

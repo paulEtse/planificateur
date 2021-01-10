@@ -341,13 +341,29 @@ class SolveurPPC:
 
         #print(mdl.refine_conflict())
         #print("Solving model....")
-        time = 15§
+        time = 15
         params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
         mdl.add_search_phase(strategies[7])
-        msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
-        #msol = run(mdl, params)
-        #print("Solution: ")
-        msol.print_solution()
+
+        df = Solution.generate_Solution_from_json("./Solution_PPC_15_sec.json")
+        
+        df2 = df[df.IsPresent == True]
+
+        print(df)
+        print(df2)
+        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+
+        print(df2)
+
+        # stp = mdl.create_empty_solution()
+        # for var in all_tasks:
+        #     stp[var] = 
+
+        # msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        # #msol = run(mdl, params)
+        # #print("Solution: ")
+        # msol.print_solution()
         
         
 
