@@ -264,7 +264,7 @@ class SolveurPPC:
                             if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
                                 #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
-        
+
         ##############################################
         # Adding resources constraints
         ##############################################
@@ -315,7 +315,6 @@ class SolveurPPC:
         print(sol)
         #intervals.sort(key = self.get_start)
 
-        
         r = lambda: random.randint(0,255)
         colors = ['#%02X%02X%02X' % (r(),r(),r())]
         i=0
