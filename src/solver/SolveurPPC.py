@@ -349,21 +349,21 @@ class SolveurPPC:
         
         df2 = df[df.IsPresent == True]
 
-        print(df)
-        print(df2)
         df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
         df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
 
-        print(df2)
+        stp = mdl.create_empty_solution()
+        for var in all_tasks:
+            truc = df2[df2.Task == var.name[-6:]]
+            truc = truc[truc.Part == var.name[:-6]].values[0]
+            print(truc)
+            stp.add_interval_var_solution(var, truc[4], truc[1])
 
-        # stp = mdl.create_empty_solution()
-        # for var in all_tasks:
-        #     stp[var] = 
-
-        # msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
-        # #msol = run(mdl, params)
-        # #print("Solution: ")
-        # msol.print_solution()
+        mdl.set_starting_point(stp)
+        msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        #msol = run(mdl, params)
+        #print("Solution: ")
+        msol.print_solution()
         
         
 
