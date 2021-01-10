@@ -105,6 +105,8 @@ def convert_to_timestamp(worktime):
             else:
                 copy -= 2*7*6
                 date_to_return += datetime.timedelta(days = 1)
+        while(date_to_return.isoweekday() > 5 or date_to_return in holidays.FR()):
+            date_to_return += datetime.timedelta(days = 1)
         date_to_return += datetime.timedelta(seconds=worktime*60*10)
         return(datetime.datetime.timestamp(date_to_return))
 
