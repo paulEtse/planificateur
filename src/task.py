@@ -29,6 +29,8 @@ class Task:
         self.meca_resource = None
         self.oc_ressource = None
         self.meca_start = None
+        self.kitting_start = None
+        self.kitting_end = None
         self.meca_end= None
         self.oc_start = None
         self.oc_end= None
@@ -43,12 +45,14 @@ class Task:
         return description
 
     def do_meca(self, resource):
-        self.meca_start = max(resource.next_freeTime, self.meca_start)
+        self.kitting_start = max(resource.next_freeTime, self.meca_start)
         self.state = State.oc
+        self.kitting_end = end_date_calc(self.kitting_start, datetime.timedelta(minutes = Task.kitting))
+        self.meca_start = self.kitting_end
         endTime = end_date_calc(self.meca_start, datetime.timedelta(minutes = self.meca))
         self.oc_start = endTime
         self.meca_end = endTime
-        self.block.module.inc(self.meca_start, endTime)
+        self.block.module.inc(self.meca_start, self.meca_end)
         self.meca_resource = resource
         resource.next_freeTime = endTime
         #print("meca " +self.name)
@@ -56,7 +60,8 @@ class Task:
     def __str__(self):
         #return self.name
         description = self.name + "\n"
-        description = description + "kitt_meca " + str(self.meca_start.date()) +" "+  str(self.meca_start.time())+ " to "+ str(self.meca_end.date()) +" "+  str(self.meca_end.time())+"\n"
+        description = description + "kitting " + str(self.kitting_start.date()) +" "+  str(self.kitting_start.time())+ " to "+ str(self.kitting_end.date()) +" "+  str(self.kitting_end.time())+"\n"
+        description = description + "meca " + str(self.meca_start.date()) +" "+  str(self.meca_start.time())+ " to "+ str(self.meca_end.date()) +" "+  str(self.meca_end.time())+"\n"
         description = description + "oc " + str(self.oc_start.date()) +" "+ str(self.oc_start.time())+" to "+str(self.oc_end.date()) +" "+ str(self.oc_end.time())+"\n"
         description = description + "mecanic "+ str(self.meca_resource.name)
         return description + "\n"

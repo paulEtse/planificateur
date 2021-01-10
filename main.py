@@ -36,14 +36,14 @@ est.addBloc(ms3)
 est.addBloc(fov)
 
 def makespan(solution):
-    start_date = solution[0].meca_start
+    start_date = solution[0].kitting_start
     end_date = solution[0].oc_end
     for t in solution:
-        if start_date > t.meca_start:
-            start_date = t.meca_end
+        if start_date > t.kitting_start:
+            start_date = t.kitting_start
         if end_date < t.oc_end:
             end_date = t.oc_end
-    print(start_date, end_date)
+    #print(start_date, end_date)
     return end_date - start_date
 
 def do_best_meca_using_req(tasks, meca):
@@ -67,10 +67,10 @@ def choose_best_oc_task(tasks, control):
 
 def choose_best_meca_task(tasks, mecanic):
     # Task that can be done
-    filtered_tasks = list(filter(lambda t: t.block.module.can_work(max(t.meca_start, mecanic.next_freeTime),
+    filtered_tasks = list(filter(lambda t: t.block.module.can_work(end_date_calc(max(t.meca_start, mecanic.next_freeTime),  datetime.timedelta(minutes=Task.kitting)),
                                                                    end_date_calc(
                                                                        max(t.meca_start, mecanic.next_freeTime),
-                                                                       datetime.timedelta(minutes=t.meca))), tasks))
+                                                                       datetime.timedelta(minutes=t.meca+Task.kitting))), tasks))
     filtered_tasks.sort(key = lambda t: max(t.meca_start, mecanic.next_freeTime))
     if len(filtered_tasks) == 0:
         return None
@@ -82,7 +82,7 @@ def choose_best_meca_task(tasks, mecanic):
 def addTask2bloc(time, req_mat, req):
     tasks = []
     for index, row in time.iterrows():
-        t = Task(index, time.loc[index, 'Tps_total'] + Task.kitting, time.loc[index, 'Tps_QC'])
+        t = Task(index, time.loc[index, 'Tps_total'], time.loc[index, 'Tps_QC'])
         t.min_start = req_mat.loc[index, 'Max_livraion']
         tasks.append(t)
         if ms1.name in t.name:
@@ -110,7 +110,8 @@ def addTask2bloc(time, req_mat, req):
 
 addTask2bloc(timeEST, req_matEST, req_taskEST)
 addTask2bloc(timeOUEST, req_matOUEST, req_taskOUEST)
-
+#for t in gtw.tasks:
+#    print(t.name, [a.name for a in t.next], [a.name for a in t.previous], t.pending_prec)
 # get max_date
 max_date = datetime.datetime(year=2018, month=1, day=1)
 for i in ms1.tasks + ms2.tasks + ms3.tasks + ms4.tasks + fov.tasks + gtw.tasks:
@@ -132,7 +133,7 @@ control.next_freeTime = max_date
 ready_to_do = [ms1.tasks.pop(0), ms2.tasks.pop(0), ms3.tasks.pop(0), ms4.tasks.pop(0),
                fov.tasks.pop(0), gtw.tasks.pop(0)]
 for t in ready_to_do:
-    t.meca_start = max_date
+    t.meca_start = max(max_date, t.min_start)
     t.state = State.meca
 i = 0
 meca_w = 0
@@ -159,11 +160,11 @@ while len(ready_to_do) != 0:
         if task is not None:
             task.do_meca(mecanic)
 
-        if iter == len(mecanics) and task == None:
+        if iter == len(mecanics) and task is None:
             # Todo
-            print("case except")
+            #print("case except")
             for t in remaining_meca_tasks:
-                t.meca_start = t.block.module.best_start(t.meca_start, datetime.timedelta(minutes=t.meca))
+                t.meca_start = t.block.module.best_start(end_date_calc(t.meca_start, datetime.timedelta(minutes=Task.kitting)), datetime.timedelta(minutes=t.meca))
 
     # Try to find an oc task to do
     remaining_oc_tasks = list(filter(lambda x: x.state == State.oc, ready_to_do))
@@ -176,7 +177,7 @@ while len(ready_to_do) != 0:
             # Dans ce cas ça marche plus
             for t in task.next:
                 if t.pending_prec == 0:
-                    t.meca_start = task.oc_end
+                    t.meca_start = max(task.oc_end, t.min_start)
                     ready_to_do.append(t)
                     t.state = State.meca
             # Remove the task done
@@ -190,6 +191,7 @@ while len(ready_to_do) != 0:
 for sol in solution:
     print(sol)
 print("makespan: " + str(makespan(solution)))
+print("nb task done : {0}".format(len(solution)))
 #Check
 est.check()
 ouest.check()
