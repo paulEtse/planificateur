@@ -82,7 +82,7 @@ def convert_to_work_time(ts):
         goal_date = datetime.datetime.fromtimestamp(ts)
         cur_date = startdate
         time_to_return = 0
-        while(cur_date <= goal_date):
+        while(cur_date <= (goal_date - datetime.timedelta(days = 1))):
             #print(cur_date)
             if(cur_date.isoweekday() > 5 or cur_date in holidays.FR()):
                 cur_date += datetime.timedelta(days = 1)
@@ -105,6 +105,8 @@ def convert_to_timestamp(worktime):
             else:
                 copy -= 2*7*6
                 date_to_return += datetime.timedelta(days = 1)
+        while(date_to_return.isoweekday() > 5 or date_to_return in holidays.FR()):
+            date_to_return += datetime.timedelta(days = 1)
         date_to_return += datetime.timedelta(seconds=worktime*60*10)
         return(datetime.datetime.timestamp(date_to_return))
 

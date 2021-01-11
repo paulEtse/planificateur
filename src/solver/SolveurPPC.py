@@ -358,7 +358,7 @@ class SolveurPPC:
             truc = truc[truc.Part == var.name[:-6]].values[0]
             print(truc)
             stp.add_interval_var_solution(var, truc[4], truc[1])
-
+            
         mdl.set_starting_point(stp)
         msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #msol = run(mdl, params)
