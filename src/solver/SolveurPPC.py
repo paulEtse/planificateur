@@ -299,12 +299,23 @@ class SolveurPPC:
         [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
         #[mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
 
-        mdl.add(mdl.no_overlap(MS1_vars))
-        mdl.add(mdl.no_overlap(MS2_vars))
-        mdl.add(mdl.no_overlap(MS3_vars))
-        mdl.add(mdl.no_overlap(MS4_vars))
-        mdl.add(mdl.no_overlap(FOV_vars))
-        mdl.add(mdl.no_overlap(GTW_vars))
+        MS1_meca = [task for task in MS1_vars if "meca" in task.name]
+        mdl.add(mdl.no_overlap(MS1_meca))
+
+        MS2_meca = [task for task in MS2_vars if "meca" in task.name]
+        mdl.add(mdl.no_overlap(MS2_meca))
+
+        MS3_meca = [task for task in MS3_vars if "meca" in task.name]
+        mdl.add(mdl.no_overlap(MS3_meca))
+
+        MS4_meca = [task for task in MS4_vars if "meca" in task.name]
+        mdl.add(mdl.no_overlap(MS4_meca))
+
+        FOV_meca = [task for task in FOV_vars if "meca" in task.name]
+        mdl.add(mdl.no_overlap(FOV_meca))
+
+        GTW_meca = [task for task in GTW_vars if "meca" in task.name]
+        mdl.add(mdl.no_overlap(GTW_meca))
 
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
