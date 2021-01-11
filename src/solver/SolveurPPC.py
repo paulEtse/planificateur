@@ -299,23 +299,23 @@ class SolveurPPC:
         [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
         #[mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
 
-        MS1_meca = [task for task in MS1_vars if "meca" in task.name]
-        mdl.add(mdl.no_overlap(MS1_meca))
+        MS1_meca_qc = [task for task in MS1_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS1_meca_qc))
 
-        MS2_meca = [task for task in MS2_vars if "meca" in task.name]
-        mdl.add(mdl.no_overlap(MS2_meca))
+        MS2_meca_qc = [task for task in MS2_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS2_meca_qc))
 
-        MS3_meca = [task for task in MS3_vars if "meca" in task.name]
-        mdl.add(mdl.no_overlap(MS3_meca))
+        MS3_meca_qc = [task for task in MS3_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS3_meca_qc))
 
-        MS4_meca = [task for task in MS4_vars if "meca" in task.name]
-        mdl.add(mdl.no_overlap(MS4_meca))
+        MS4_meca_qc = [task for task in MS4_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS4_meca_qc))
 
-        FOV_meca = [task for task in FOV_vars if "meca" in task.name]
-        mdl.add(mdl.no_overlap(FOV_meca))
+        FOV_meca_qc = [task for task in FOV_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(FOV_meca_qc))
 
-        GTW_meca = [task for task in GTW_vars if "meca" in task.name]
-        mdl.add(mdl.no_overlap(GTW_meca))
+        GTW_meca_qc = [task for task in GTW_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(GTW_meca_qc))
 
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
