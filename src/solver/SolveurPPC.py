@@ -409,6 +409,8 @@ class SolveurPPC:
         #print(self.timeEST)
         #print(self.req_matEST)
         #print(self.req_taskEST)
+    
+    
         
-
+    
         
