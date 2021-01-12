@@ -33,7 +33,7 @@ class SolveurPPC:
         pass
 
 
-    def create_model(self):
+    def create_model(self,strat,timeout):
         mdl = CpoModel(name = "TAS Scheduling")
        
        
@@ -340,10 +340,10 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
 
         #print(mdl.refine_conflict())
-        #print("Solving model....")
-        time = 15
-        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
-        mdl.add_search_phase(strategies[7])
+        #print("Solving model....")timeout
+        time = timeout
+        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="IterativeDiving")
+        mdl.add_search_phase(strategies[strat])
         msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #msol = run(mdl, params)
         #print("Solution: ")
@@ -353,8 +353,8 @@ class SolveurPPC:
 
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
         print(solution)
-        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec")
-        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec")
+        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec_{strat}")
+        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec_{strat}")
 
 
     def get_start(self, sol):
