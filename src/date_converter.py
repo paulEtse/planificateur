@@ -17,19 +17,19 @@ def isFreeTime(date):
 
 
 def start1_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=0, minute=0)
 
 
 def start2_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=15, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
 
 
 def end1_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=14, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
 
 
 def end2_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=22, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=14, minute=0)
 
 
 def next_start(date):

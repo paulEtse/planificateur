@@ -8,6 +8,7 @@ from src.task import Task, State
 import datetime
 from extractor.Extract_data import pathOUEST, pathEST, extract_tasks_from_excel, add_next2req_task
 
+
 # Build a first version of solution
 # Assume that we have 3 meca ressources and 1 oc
 
@@ -19,38 +20,40 @@ def makespan(solution):
             start_date = t.kitting_start
         if end_date < t.oc_end:
             end_date = t.oc_end
-    #print(start_date, end_date)
+    # print(start_date, end_date)
     return end_date - start_date
 
+
 def do_best_meca_using_req(tasks, meca):
-
-
     raise NotImplemented
+
+
 def choose_best_oc_task(tasks, control):
     # Task that can be done
     filtered_tasks = list(filter(lambda t: t.block.module.can_work(max(t.oc_start, control.next_freeTime),
                                                                    end_date_calc(max(t.oc_start, control.next_freeTime),
-                                                                                     datetime.timedelta(
-                                                                                         minutes=t.oc))),
+                                                                                 datetime.timedelta(
+                                                                                     minutes=t.oc)), State.oc),
                                  tasks))
-    filtered_tasks.sort(key = lambda t: max(t.oc_start, control.next_freeTime))
+    filtered_tasks.sort(key=lambda t: max(t.oc_start, control.next_freeTime))
     if len(filtered_tasks) == 0:
         return None
-        #raise Exception
+        # raise Exception
     # Order by starttime
     return filtered_tasks[0]
 
 
 def choose_best_meca_task(tasks, mecanic):
     # Task that can be done
-    filtered_tasks = list(filter(lambda t: t.block.module.can_work(end_date_calc(max(t.meca_start, mecanic.next_freeTime),  datetime.timedelta(minutes=Task.kitting)),
-                                                                   end_date_calc(
-                                                                       max(t.meca_start, mecanic.next_freeTime),
-                                                                       datetime.timedelta(minutes=t.meca+Task.kitting))), tasks))
-    filtered_tasks.sort(key = lambda t: max(t.meca_start, mecanic.next_freeTime))
+    filtered_tasks = list(filter(lambda t: t.block.module.can_work(
+        end_date_calc(max(t.meca_start, mecanic.next_freeTime), datetime.timedelta(minutes=Task.kitting)),
+        end_date_calc(
+            max(t.meca_start, mecanic.next_freeTime),
+            datetime.timedelta(minutes=t.meca + Task.kitting)), State.meca), tasks))
+    filtered_tasks.sort(key=lambda t: max(t.meca_start, mecanic.next_freeTime))
     if len(filtered_tasks) == 0:
         return None
-        #raise Exception
+        # raise Exception
     # Order by starttime
     return filtered_tasks[0]
 
@@ -83,6 +86,25 @@ def addTask2bloc(time, req_mat, req, ms1, ms2, ms3, ms4, fov, gtw):
         if req.loc[index, 'next'] is not None:
             t.next = list(filter(lambda t: t.name in req.loc[index, 'next'], tasks))
 
+def convert_solution_to_df(solution):
+    df = pd.DataFrame(index = np.arange(0, (len(solution) * 3)), columns=['Task', 'Start', 'Finish', 'Part', 'IsPresent'])
+    for i in range(0, len(solution)):
+        df.iloc[3 * i] = [solution[i].name,
+                         str(solution[i].kitting_start.date()) + " " + str(solution[i].kitting_start.time()),
+                         str(solution[i].kitting_end.date()) + " " + str(solution[i].kitting_end.time()),
+                          'kitting',
+                          True]
+        df.iloc[3 * i + 1] = [solution[i].name,
+                             str(solution[i].meca_start.date()) + " " + str(solution[i].meca_start.time()),
+                             str(solution[i].meca_end.date()) + " " + str(solution[i].meca_end.time()),
+                              'meca',
+                              True]
+        df.iloc[3 * i + 2] = [solution[i].name,
+                             str(solution[i].oc_start.date()) + " " + str(solution[i].oc_start.time()),
+                             str(solution[i].oc_end.date()) + " " + str(solution[i].oc_end.time()),
+                             'qc',
+                             True]
+    return df
 def solve():
     timeOUEST, req_matOUEST, req_taskOUEST = extract_tasks_from_excel(pathOUEST)
     timeEST, req_matEST, req_taskEST = extract_tasks_from_excel(pathEST)
@@ -193,9 +215,11 @@ def solve():
     # Check
     est.check()
     ouest.check()
-    return solution
+    return convert_solution_to_df(solution)
 
-solve()
+
+solution = solve()
+print(solution)
 # Build a solution based on ResourceOrder solution of jobshop
 # Solve it
 # Display solution
