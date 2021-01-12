@@ -299,12 +299,23 @@ class SolveurPPC:
         [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
         #[mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
 
-        mdl.add(mdl.no_overlap(MS1_vars))
-        mdl.add(mdl.no_overlap(MS2_vars))
-        mdl.add(mdl.no_overlap(MS3_vars))
-        mdl.add(mdl.no_overlap(MS4_vars))
-        mdl.add(mdl.no_overlap(FOV_vars))
-        mdl.add(mdl.no_overlap(GTW_vars))
+        MS1_meca_qc = [task for task in MS1_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS1_meca_qc))
+
+        MS2_meca_qc = [task for task in MS2_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS2_meca_qc))
+
+        MS3_meca_qc = [task for task in MS3_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS3_meca_qc))
+
+        MS4_meca_qc = [task for task in MS4_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(MS4_meca_qc))
+
+        FOV_meca_qc = [task for task in FOV_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(FOV_meca_qc))
+
+        GTW_meca_qc = [task for task in GTW_vars if (("meca" in task.name) or ("qc" in task.name))]
+        mdl.add(mdl.no_overlap(GTW_meca_qc))
 
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
@@ -340,10 +351,28 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
 
         #print(mdl.refine_conflict())
+
         #print("Solving model....")timeout
         time = timeout
-        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="IterativeDiving")
-        mdl.add_search_phase(strategies[strat])
+        #print("Solving model....")
+        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
+        mdl.add_search_phase(strategies[7])
+
+        df = Solution.generate_Solution_from_json("./Solution_PPC_15_sec.json")
+        
+        df2 = df[df.IsPresent == True]
+
+        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+
+        stp = mdl.create_empty_solution()
+        for var in all_tasks:
+            truc = df2[df2.Task == var.name[-6:]]
+            truc = truc[truc.Part == var.name[:-6]].values[0]
+            print(truc)
+            stp.add_interval_var_solution(var, truc[4], truc[1])
+            
+        mdl.set_starting_point(stp)
         msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #msol = run(mdl, params)
         #print("Solution: ")
@@ -382,6 +411,8 @@ class SolveurPPC:
         #print(self.timeEST)
         #print(self.req_matEST)
         #print(self.req_taskEST)
+    
+    
         
-
+    
         
