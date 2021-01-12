@@ -409,6 +409,236 @@ class SolveurPPC:
         #print(self.timeEST)
         #print(self.req_matEST)
         #print(self.req_taskEST)
+
+
+    #------------------------- FONCTIONS A CODER ---------------------------------------
+    def maj_date_min_task(new_date_min, name_task):
+        print("-----maj_date_min_task(new_date_min, name_task)-------")
+        print("TODO")
+
+    def maj_date_livraison(new_date_livraison, etiq_product):
+        print("-----maj_date_livraison(new_date_livraison, etiq_product)------")
+        print("TODO")
+    #------------------------------------------------------------------------------------
+
+
+    def apply_and_check_nouvelle_livraison(jour, mois, annee, etiq_product, path_solution):
+
+        timeOUEST, req_matOUEST, req_taskOUEST = self.timeOUEST, self.req_matOUEST, self.req_taskOUEST
+        #Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
+        timeEST, req_matEST, req_taskEST = self.timeEST, self.req_matEST, self.req_taskEST
+        #Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
+        
+        last_solution = Solution.generate_Solution_from_json(path_solution)
+        last_solution = last_solution[last_solution.IsPresent == True]
+        
+        need_solve_again = True
+
+        date = datetime(annee,mois,jour)
+        date_timestamp = datetime.timestamp(date)
+
+        #dates des livraisons
+        livraisons = (pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])).iloc[:,2:]
+
+        #---------------- recherche date originale ----------------
+        found = False
+        size = len(livraisons["Etiquettes TOPO"])
+        date_origin = date
+        for i in range(size):
+            l = livraisons["Etiquettes TOPO"][i]
+        
+            if (l == etiq_product):
+                found = True
+                date_origin = livraisons["livraison au MAG AIT"][i]
+                #print(type(date_origin))
+                #<class 'pandas._libs.tslibs.timestamps.Timestamp'>
+                #<=> datetime !!
+
+                # maj date livraison ==============================================================================
+                maj_date_livraison(date, etiq_product) #TODO 
+                # modif d'un json sur BDD ? => changer la récupération des livraisons juste au dessus !!
+
+        #---------------- vérification écart date ----------------
+        plus_tot = False
+        plus_tard = False
+
+        if not(found):
+            print("problème - référence pas trouvée")
+            need_solve_again = False
+            #cas où len(livraisons) == 0 : ici
+        else:
+            livraison_before_origin = date < date_origin
+            livraison_equals_origin = (date == date_origin)
+            if (livraison_equals_origin): 
+                print("date livraison non changée")
+                need_solve_again = False
+            elif(livraison_before_origin):
+                print("date livraison plut tôt que prévu")
+                plus_tot = True
+            else:
+                print("date livraison plut tard que prévu")
+                plus_tard = True
+        
+        #---------------- recherche tâches + min dates tâches ----------------
+        found_tasks_EST = False
+        num_EST = 0
+        tasks_EST_i = []
+        tasks_EST = []
+        dates_min_EST = []
+
+        found_tasks_OUEST = False
+        num_OUEST = 0
+        tasks_OUEST_i = []
+        tasks_OUEST = []
+        dates_min_OUEST = []
+
+        if need_solve_again:
+            print("---------------- recherche tâches + min dates tâches ----------------")
+
+            #---------------- recherche EST
+            for i in range(len(req_matEST)):
+                task = req_matEST.index[i]
+                liste_produits_livraison = req_matEST.iloc[i,0]
+                min_start_date = req_matEST.iloc[i,2]
+
+                if etiq_product in liste_produits_livraison:
+                    print("ok EST : task = ", task)
+                    found_tasks_EST = True
+                    tasks_EST_i.append(i)
+                    tasks_EST.append(task)
+                    dates_min_EST.append(min_start_date)
+
+            #---------------- recherche OUEST
+            for i in range(len(req_matOUEST)):
+                task = req_matOUEST.index[i]
+                liste_produits_livraison = req_matOUEST.iloc[i,0]
+                min_start_date = req_matOUEST.iloc[i,2]
+
+                if etiq_product in liste_produits_livraison:
+                    print("ok OUEST : task = ", task)
+                    found_tasks_OUEST = True
+                    tasks_OUEST_i.append(i)
+                    tasks_OUEST.append(task)
+                    dates_min_OUEST.append(min_start_date)
+
+            num_EST = len(tasks_EST_i)
+            num_OUEST = len(tasks_OUEST_i)
+
+            found_tasks = found_tasks_EST or found_tasks_OUEST
+            if (not found_tasks):
+                print("problème - aucune tâche trouvée pour la référence")
+                need_solve_again = False
+        
+        #---------------- vérification min dates ----------------
+        #si plus tard 
+        #toutes les taches ont un min superieur a date => rien a faire
+        #une des taches a un min inferieur a date => min de cette tache a maj + solve again
+
+        #recherche un min de tache < date
+        found_min_inf = False
+        list_tasks_min_inf = []
+
+        if need_solve_again and plus_tard:
+            print("---------------- vérification min dates ----------------\n si plus tard")
+
+            if found_tasks_EST:
+                for i in range(num_EST):
+                    current_date = dates_min_EST[i]
+                    if current_date < date:
+                        #maj min (:= date) de la tache d'index tasks_EST_i[i] et de nom tasks_EST[i] ======================
+                        maj_date_min_task(date, tasks_EST[i]) #TODO
+                        found_min_inf = True
+                        list_tasks_min_inf.append(tasks_EST[i])
+        
+            if found_tasks_OUEST:
+                for i in range(num_OUEST):
+                    current_date = dates_min_OUEST[i]
+                    if current_date < date:
+                        #maj min (:= date) de la tache d'index tasks_OUEST_i[i] et de nom tasks_OUEST[i] ==================
+                        maj_date_min_task(date, tasks_OUEST[i]) #TODO
+                        found_min_inf = True
+                        list_tasks_min_inf.append(tasks_OUEST[i])
+            
+            if (not found_min_inf):
+                print("tâches trouvées pour la référence : déjà une date min supérieure")
+                need_solve_again = False
+        
+        #si plus tot
+        #toutes les taches ont un min superieur a origin => rien a faire
+        #une des taches a un min egal a origin  => recalcul du min de cette tache avec autre produits : si une amélioration => solve again
+        if need_solve_again and plus_tot:
+            print("---------------- vérification min dates ----------------\n si plus tot")
+
+            #recherche un min de tache == date_origin améliorant !
+            found_min_mieux = False
+
+            if found_tasks_EST:
+                for i in range(num_EST):
+                    current_task = tasks_EST[i]
+                    current_num_task = tasks_EST_i[i]
+                    current_date = dates_min_EST[i]
+                    liste_produits_current_task = req_matEST.iloc[current_num_task,0]
+
+                    if current_date == date_origin:
+                        
+                        #recalcul : est-ce que date_origin dependait uniquement du produit changé ?
+                        max_livraison = date
+                        for ref,date_liv in livraisons.iloc[:].values:
+                            if ref in liste_produits_current_task:
+                                if date_liv > max_livraison:
+                                    max_livraison = date_liv
+
+                        if max_livraison < date_origin:
+                            #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
+                            maj_date_min_task(max_livraison, current_task) #TODO
+                            found_min_mieux = True
+        
+            if found_tasks_OUEST:
+                for i in range(num_OUEST):
+                    current_task = tasks_OUEST[i]
+                    current_num_task = tasks_OUEST_i[i]
+                    current_date = dates_min_OUEST[i]
+                    liste_produits_current_task = req_matOUEST.iloc[current_num_task,0]
+
+                    if current_date == date_origin:
+                        
+                        #recalcul : est-ce que date_origin dependait uniquement du produit changé ?
+                        max_livraison = date
+                        for ref,date_liv in livraisons.iloc[:].values:
+                            if ref in liste_produits_current_task:
+                                if date_liv > max_livraison:
+                                    max_livraison = date_liv
+
+                        if max_livraison < date_origin:
+                            #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
+                            maj_date_min_task(max_livraison, current_task) #TODO
+                            found_min_mieux = True
+            
+            if (not found_min_mieux):
+                print("tâches trouvées pour la référence : toutes avec un autre produit de date min supérieure")
+                need_solve_again = False
+            
+        #---------------- vérification start dates ----------------
+        #si plus tot && une des taches a un min egal a origin && amélioration du min => solve again (deja prévu)
+        
+        #si plus tard && une des taches a un min inferieur a date => min de cette tache a maj 
+        # => si ces taches demarraient avant cette date : solve again
+
+        # pd.DataFrame(columns = ["Task", "Start","Finish", "Part","IsPresent"] )
+
+        if need_solve_again and plus_tard and found_min_inf:
+            
+            sol_tasks_to_check = last_solution[last_solution.Task.isin(list_tasks_min_inf)]
+
+            sol_tasks_inf = [sol_tasks_to_check.Start <= date_timestamp*1000]
+        
+            starts_task_found = (len(sol_tasks_inf.Start) != 0)
+            
+            if (not starts_task_found):
+                print("tâches trouvées pour la référence, dont la contrainte de départ est impactée : aucune ne démarre avant cette nouvelle date")
+                need_solve_again = False
+
+        return need_solve_again
     
     
         
