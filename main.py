@@ -1,12 +1,8 @@
-from src.date_converter import end_date_calc
-from src.solver import resourceOrder
+# coding=utf-8
+
 from src.resource import Resource, Rtype
 from src.module import Module
 from src.bloc import Bloc
-import pandas as pd
-import math
-import os
-import numpy as np
 from src.date_converter import end_date_calc, start1_of_date
 from src.task import Task, State
 import datetime

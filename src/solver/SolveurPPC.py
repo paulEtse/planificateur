@@ -1,3 +1,4 @@
+# coding=utf-8
 #import SolverInterface
 from docplex.cp.modeler import end_before_start
 from docplex.cp.model import CpoModel, CpoStepFunction, INTERVAL_MIN, INTERVAL_MAX
@@ -424,7 +425,7 @@ class SolveurPPC:
     #------------------------------------------------------------------------------------
 
 
-    def apply_and_check_nouvelle_livraison(jour, mois, annee, etiq_product, path_solution):
+    def apply_and_check_nouvelle_livraison(self, jour, mois, annee, etiq_product, path_solution):
 
         timeOUEST, req_matOUEST, req_taskOUEST = self.timeOUEST, self.req_matOUEST, self.req_taskOUEST
         #Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
@@ -457,7 +458,7 @@ class SolveurPPC:
                 #<=> datetime !!
 
                 # maj date livraison ==============================================================================
-                maj_date_livraison(date, etiq_product) #TODO 
+                self.maj_date_livraison(date, etiq_product) #TODO
                 # modif d'un json sur BDD ? => changer la récupération des livraisons juste au dessus !!
 
         #---------------- vérification écart date ----------------
@@ -548,7 +549,7 @@ class SolveurPPC:
                     current_date = dates_min_EST[i]
                     if current_date < date:
                         #maj min (:= date) de la tache d'index tasks_EST_i[i] et de nom tasks_EST[i] ======================
-                        maj_date_min_task(date, tasks_EST[i]) #TODO
+                        self.maj_date_min_task(date, tasks_EST[i]) #TODO
                         found_min_inf = True
                         list_tasks_min_inf.append(tasks_EST[i])
         
@@ -557,7 +558,7 @@ class SolveurPPC:
                     current_date = dates_min_OUEST[i]
                     if current_date < date:
                         #maj min (:= date) de la tache d'index tasks_OUEST_i[i] et de nom tasks_OUEST[i] ==================
-                        maj_date_min_task(date, tasks_OUEST[i]) #TODO
+                        self.maj_date_min_task(date, tasks_OUEST[i]) #TODO
                         found_min_inf = True
                         list_tasks_min_inf.append(tasks_OUEST[i])
             
@@ -592,7 +593,7 @@ class SolveurPPC:
 
                         if max_livraison < date_origin:
                             #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
-                            maj_date_min_task(max_livraison, current_task) #TODO
+                            self.maj_date_min_task(max_livraison, current_task) #TODO
                             found_min_mieux = True
         
             if found_tasks_OUEST:
@@ -613,7 +614,7 @@ class SolveurPPC:
 
                         if max_livraison < date_origin:
                             #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
-                            maj_date_min_task(max_livraison, current_task) #TODO
+                            self.maj_date_min_task(max_livraison, current_task) #TODO
                             found_min_mieux = True
             
             if (not found_min_mieux):
