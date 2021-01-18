@@ -334,6 +334,10 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_impact()))]
 
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
@@ -347,6 +351,10 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
+        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
 
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
 
@@ -365,21 +373,19 @@ class SolveurPPC:
         df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
         df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
 
-        stp = mdl.create_empty_solution()
-        for var in all_tasks:
-            truc = df2[df2.Task == var.name[-6:]]
-            truc = truc[truc.Part == var.name[:-6]].values[0]
-            print(truc)
-            stp.add_interval_var_solution(var, truc[4], truc[1])
+        #stp = mdl.create_empty_solution()
+        #for var in all_tasks:
+        #    truc = df2[df2.Task == var.name[-6:]]
+        #    truc = truc[truc.Part == var.name[:-6]].values[0]
+        #    print(truc)
+        #    stp.add_interval_var_solution(var, truc[4], truc[1])
             
-        mdl.set_starting_point(stp)
+        #mdl.set_starting_point(stp)
         msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #msol = run(mdl, params)
         #print("Solution: ")
         msol.print_solution()
         
-        
-
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
         print(solution)
         Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec_{strat}")
