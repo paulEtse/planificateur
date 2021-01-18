@@ -1,6 +1,7 @@
 import numpy as np
 import datetime
-from src.date_converter import end_date_calc
+from src.task import Task, State
+from src.date_converter import end_date_calc, end2_of_date
 
 
 class Module:
@@ -23,7 +24,10 @@ class Module:
         index = int((start_ - self.start).total_seconds() / 60)
         return self.nb_op[index]
 
-    def can_work(self, start_ , to):
+    def can_work(self, start_ , to, state):
+        #if state == State.meca and end_date_calc(start_, datetime.timedelta(minutes=Task.kitting)) > end2_of_date(start_):
+            # print("###### {0}".format(start_))
+        #    return False
         start_index = int((start_ - self.start).total_seconds() / 60)
         end_index = int((to - self.start).total_seconds() / 60)
         i = start_index

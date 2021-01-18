@@ -1,0 +1,9 @@
+holidays
+datetime
+numpy
+pandas
+docplex
+plotly
+pathlib
+xlrd==1.2.0
+requests
