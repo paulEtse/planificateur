@@ -15,6 +15,8 @@ from datetime import datetime
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import plotly.io as pio
+import requests
+import json
 
 class SolveurPPC:  
     def __init__(self):
@@ -37,8 +39,11 @@ class SolveurPPC:
 
     def create_model(self,strat,timeout,searchType, k):
         mdl = CpoModel(name = "TAS Scheduling")
+        baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
        
-       
+        r = requests.get(baseUrl + '/project/constraints')
+        yo = pd.DataFrame.from_dict(r.json()[0], orient = 'index')
+        print(yo)
         #####################################################
         # Creating interval variables for WEST module
         #####################################################
