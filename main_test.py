@@ -8,14 +8,26 @@ from src import Solution
 
 date = datetime(2019,11,4,1,20,0)
 
-for i in range(50):
-    ts = datetime.timestamp(date)
-    print("Original date : ", date, ts)
-    worktime = date_converter.convert_to_work_time(ts)
-    print("worktime :" , worktime)
-    converted = date_converter.convert_to_timestamp(worktime)
-    print("converted date : ", datetime.fromtimestamp(converted) ,converted )
-    date = date + timedelta(seconds = 60*60)
+# for i in range(50):
+#     ts = datetime.timestamp(date)
+#     print("Original date : ", date, ts)
+#     worktime = date_converter.convert_to_work_time(ts)
+#     print("worktime :" , worktime)
+#     converted = date_converter.convert_to_timestamp(worktime)
+#     print("converted date : ", datetime.fromtimestamp(converted) ,converted )
+#     date = date + timedelta(seconds = 60*60)
+
+for i in range(0,1000):
+    wt = i*6
+    date = date_converter.convert_to_timestamp(wt)
+    wt_bis = date_converter.convert_to_work_time(date)
+    # if (not wt == wt_bis):
+    print("Original wt : ", wt)
+    print("date :" , date, datetime.fromtimestamp(date) )
+    print("convcerted worktime :" , wt_bis)
+    print(wt == wt_bis)
+
+
 
 #-------------------------------------------------------------------------------------------
 

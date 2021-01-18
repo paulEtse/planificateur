@@ -76,15 +76,15 @@ def end_date_calc(start_date, duration):
 def convert_to_work_time(ts):
     cur_ts = datetime.datetime.timestamp(startdate)
     time_to_return = 0
-    print("while cond",ts - 60*60*24)
+    #print("while cond",ts - 60*60*24)
     while(cur_ts < (ts - 60*60*24)) :
         cur_date = datetime.date.fromtimestamp(cur_ts)
-        print("cur_ts : ", cur_ts,cur_date)
+        #print("cur_ts : ", cur_ts,cur_date)
         if(cur_date.isoweekday() > 5 or cur_date in holidays.FR()):
-            print("holydays")
+            #print("holydays")
             cur_ts += 60*60*24
         else:
-            print("not_holydays")
+            #print("not_holydays")
             time_to_return += 2*7*6
             cur_ts += 60*60*24
     cur_date = datetime.date.fromtimestamp(cur_ts)
@@ -110,8 +110,4 @@ def convert_to_timestamp(worktime):
         date_to_return += datetime.timedelta(days = 1)
     date_to_return += datetime.timedelta(seconds=copy*60*10)
     return(datetime.datetime.timestamp(date_to_return))
-
-
-
-
 

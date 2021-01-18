@@ -20,8 +20,8 @@ class SolveurPPC:
     def __init__(self):
         self.timeOUEST, self.req_matOUEST, self.req_taskOUEST = Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
         self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
-        self.start_date = datetime.timestamp(datetime(2019,12,1))
-        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
+        self.start_date = datetime.timestamp(datetime(2019,11,2))
+        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,2,15)))
         self.kitting_time_max = 3 * 6
         self.kitting_time_mid = int(1.5 * 6)
         self.kitting_time_min = 6
@@ -335,10 +335,6 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_impact()))]
 
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
@@ -352,10 +348,6 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_range(range(len(all_tasks)))),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
 
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
 
@@ -364,8 +356,8 @@ class SolveurPPC:
         #print("Solving model....")timeout
         time = timeout
         #print("Solving model....")
-        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
-        mdl.add_search_phase(strategies[7])
+        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="IterativeDiving") #SearchType="DepthFirst"
+        mdl.add_search_phase(strategies[strat])
 
         df = Solution.generate_Solution_from_json("./Solution_PPC_15_sec.json")
         
