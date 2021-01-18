@@ -5,7 +5,7 @@ from src.solver.SolveurPPC import SolveurPPC
 ppc = SolveurPPC()
 #ppc.print_OUEST()
 #ppc.print_EST()
-ppc.create_model(0,20, "Restart", 1)
+ppc.create_model(0,10, "Restart", 1)
 #ppc.create_model(0,30*60, "IterativeDiving", 1)
 #ppc.create_model(2,60*60, "DepthFirst")
 #ppc.create_model(2,60*60, "MultiPoint")
