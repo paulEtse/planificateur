@@ -15,13 +15,18 @@ from datetime import datetime
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import plotly.io as pio
+import requests
+import json
 
 class SolveurPPC:  
     def __init__(self):
         self.timeOUEST, self.req_matOUEST, self.req_taskOUEST = Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
         self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
         self.start_date = datetime.timestamp(datetime(2019,11,2))
-        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,2,15)))
+
+        self.date_all_delivery = datetime.timestamp(datetime(2019,11,2))
+        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
+
         self.kitting_time_max = 3 * 6
         self.kitting_time_mid = int(1.5 * 6)
         self.kitting_time_min = 6
@@ -34,10 +39,13 @@ class SolveurPPC:
         pass
 
 
-    def create_model(self,strat,timeout):
+    def create_model(self,strat,timeout,searchType, k):
         mdl = CpoModel(name = "TAS Scheduling")
+        # baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
        
-       
+        # r = requests.get(baseUrl + '/project/constraints')
+        # yo = pd.DataFrame.from_dict(r.json()[0], orient = 'index')
+        # print(yo)
         #####################################################
         # Creating interval variables for WEST module
         #####################################################
@@ -52,6 +60,9 @@ class SolveurPPC:
         for i in range(len(self.timeOUEST)):
             #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matOUEST.iloc[i,2])))
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+            #min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
+
+
             print(min_start_time, self.req_matOUEST.iloc[i,2])
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
             qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
@@ -138,6 +149,9 @@ class SolveurPPC:
         for i in range(len(self.timeEST)):
             #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matEST.iloc[i,2])))
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+            #min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
+
+
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
             qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
             
@@ -318,7 +332,10 @@ class SolveurPPC:
         GTW_meca_qc = [task for task in GTW_vars if (("meca" in task.name) or ("qc" in task.name))]
         mdl.add(mdl.no_overlap(GTW_meca_qc))
 
-        mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
+        mdl.add(mdl.minimize(k*mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
+        #mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks])))
+
+        #mdl.add_kpi(lambda res: mdl.pulse(res[all_tasks[0]], 1), "Test")
 
         print(mdl.export_model())
 
@@ -348,7 +365,6 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
 
         #print(mdl.refine_conflict())
@@ -356,33 +372,43 @@ class SolveurPPC:
         #print("Solving model....")timeout
         time = timeout
         #print("Solving model....")
-        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="IterativeDiving") #SearchType="DepthFirst"
-        mdl.add_search_phase(strategies[strat])
 
-        df = Solution.generate_Solution_from_json("./Solution_PPC_15_sec.json")
+        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType=searchType)
+        mdl.add(strategies[strat])
+
+
+
+        df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
         
         df2 = df[df.IsPresent == True]
 
         df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
         df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
 
-        #stp = mdl.create_empty_solution()
-        #for var in all_tasks:
-        #    truc = df2[df2.Task == var.name[-6:]]
-        #    truc = truc[truc.Part == var.name[:-6]].values[0]
-        #    print(truc)
-        #    stp.add_interval_var_solution(var, truc[4], truc[1])
+        stp = mdl.create_empty_solution()
+        print("BONJOUR")
+        for var in all_tasks:
+            truc = df2[df2.Task == var.name[-6:]]
+            truc = truc[truc.Part == var.name[:-6]].values[0]
+            print(truc)
+            stp.add_interval_var_solution(var, truc[4], truc[1] - 6, truc[2] - 6, truc[2] - truc[1], truc[2] - truc[1])
             
-        #mdl.set_starting_point(stp)
-        msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
+        stp.print_solution()
+        print("AUREVOIR")
+        mdl.set_starting_point(stp)
+
+        # first_sol = mdl.propagate()
+        # mdl.set_starting_point(first_sol.get_solution())
+        msol = mdl.solve(TimeLimit = time, SearchType = searchType)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
         #msol = run(mdl, params)
         #print("Solution: ")
         msol.print_solution()
+        #print("KPI : ", msol.get_solution().get_kpi_value("Test"))
         
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
         print(solution)
-        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec_{strat}")
-        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec_{strat}")
+        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec_{strat}_type_{searchType}_k_{k}")
+        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec_{strat}_type_{searchType}_k_{k}")
 
 
     def get_start(self, sol):
