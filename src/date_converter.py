@@ -1,7 +1,7 @@
 import datetime
 import holidays
 
-startdate = datetime.datetime(2019,11,1,0,0,0)
+startdate = datetime.datetime(2019,11,1,1,0,0)
 
 
 fr_holidays = holidays.FR()
@@ -89,10 +89,10 @@ def convert_to_work_time(ts):
             cur_ts += 60*60*24
     cur_date = datetime.date.fromtimestamp(cur_ts)
     if(not(cur_date.isoweekday() > 5 or cur_date in holidays.FR())):
-        if(int((ts - cur_ts)/600) < (14*6)):
-            time_to_return += int((ts - cur_ts)/600)
-        else:
-            time_to_return += 14*6
+        #if(int((ts - cur_ts)/600) < (14*6)):
+        time_to_return += int((ts - cur_ts)/600)
+        #else:
+            #time_to_return += 14*6
     return(time_to_return )
 
 
