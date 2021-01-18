@@ -4,6 +4,10 @@ import requests
 
 from src.solver.SolveurPPC import SolveurPPC
 
+from docplex.cp.config import context
+context.solver.agent = 'local'
+context.solver.local.execfile = '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'
+
 #time.sleep(40) #Security
 
 baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
