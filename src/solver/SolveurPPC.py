@@ -40,7 +40,7 @@ class SolveurPPC:
         pass
 
 
-    def create_model(self, strat, timeout, searchType, k):
+    def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
         # baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
        
@@ -262,43 +262,21 @@ class SolveurPPC:
         GTW_meca_qc = [task for task in GTW_vars if (("meca" in task.name) or ("qc" in task.name))]
         mdl.add(mdl.no_overlap(GTW_meca_qc))
 
-        mdl.add(mdl.minimize(k*mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
+        mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
-        print(mdl.export_model())
+        return mdl
 
-        strategies = []
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+    def main(self, from_scratch, timeout, solution):
+        mdl = self.create_model()
+        if from_scratch:
+            sol = self.solve(mdl, timeout)
+            return sol
+        else:
+            mdl = self.start_from_solution(mdl, solution)
+            sol = self.solve(mdl, timeout)
+            return sol
 
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
-
-
-        ###################################
-        #      RESTART FORM SOLUTION      #
-        ###################################
-        
+    def start_from_solution(self, mdl, solution):
         df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
 
         df2 = df[df.IsPresent == True]
@@ -308,7 +286,7 @@ class SolveurPPC:
 
         stp = mdl.create_empty_solution()
         print("BONJOUR")
-        for var in all_tasks:
+        for var in mdl.get_all_variables():
             df3 = df2[df2.Task == var.name[-6:]]
             df3 = df3[df3.Part == var.name[:-6]].values[0]
             print(df3)
@@ -318,15 +296,43 @@ class SolveurPPC:
         print("AUREVOIR")
         mdl.set_starting_point(stp)
 
-        ###################################
-        #             SOLVING             #
-        ###################################
-        mdl.add(strategies[strat])
+        return mdl
+
+
+    def solve(self, mdl, timeout, strategy = 7, searchType = "Restart"):
+
+        strategies = []
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
+        
+        mdl.add(strategies[strategy])
         msol = mdl.solve(TimeLimit = timeout, SearchType = searchType)
         msol.print_solution()
         
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
-        print(solution)
         Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strat}_type_{searchType}_k_{k}")
         Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strat}_type_{searchType}_k_{k}")
 
@@ -361,11 +367,11 @@ class SolveurPPC:
 
 
     #------------------------- FONCTIONS A CODER ---------------------------------------
-    def maj_date_min_task(new_date_min, name_task):
+    def maj_date_min_task(self, new_date_min, name_task):
         print("-----maj_date_min_task(new_date_min, name_task)-------")
         print("TODO")
 
-    def maj_date_livraison(new_date_livraison, etiq_product):
+    def maj_date_livraison(self, new_date_livraison, etiq_product):
         print("-----maj_date_livraison(new_date_livraison, etiq_product)------")
         print("TODO")
     #------------------------------------------------------------------------------------
