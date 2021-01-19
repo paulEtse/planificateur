@@ -1,7 +1,7 @@
 import datetime
 import holidays
 
-startdate = datetime.datetime(2019,11,1,1,0,0)
+startdate = datetime.datetime(2019,11,1,0,0,0)
 
 
 fr_holidays = holidays.FR()
@@ -17,19 +17,19 @@ def isFreeTime(date):
 
 
 def start1_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=0, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
 
 
 def start2_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=15, minute=0)
 
 
 def end1_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=14, minute=0)
 
 
 def end2_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=14, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=22, minute=0)
 
 
 def next_start(date):
@@ -89,10 +89,10 @@ def convert_to_work_time(ts):
             cur_ts += 60*60*24
     cur_date = datetime.date.fromtimestamp(cur_ts)
     if(not(cur_date.isoweekday() > 5 or cur_date in holidays.FR())):
-        #if(int((ts - cur_ts)/600) < (14*6)):
-        time_to_return += int((ts - cur_ts)/600)
-        #else:
-            #time_to_return += 14*6
+        if (int((ts - cur_ts)/600) <= 14*6):
+            time_to_return += int((ts - cur_ts)/600)
+        else:
+            time_to_return += 2*7*6
     return(time_to_return )
 
 
@@ -110,4 +110,8 @@ def convert_to_timestamp(worktime):
         date_to_return += datetime.timedelta(days = 1)
     date_to_return += datetime.timedelta(seconds=copy*60*10)
     return(datetime.datetime.timestamp(date_to_return))
+
+
+
+
 

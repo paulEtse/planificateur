@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import requests
 import json
+import numpy as np
 
 class SolveurPPC:  
     def __init__(self):
@@ -381,9 +382,9 @@ class SolveurPPC:
         df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
         
         df2 = df[df.IsPresent == True]
-
-        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
-        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+        print(np.asarray(df["Start"]))
+        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
+        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
 
         stp = mdl.create_empty_solution()
         print("BONJOUR")
@@ -391,7 +392,7 @@ class SolveurPPC:
             truc = df2[df2.Task == var.name[-6:]]
             truc = truc[truc.Part == var.name[:-6]].values[0]
             print(truc)
-            stp.add_interval_var_solution(var, truc[4], truc[1] - 6, truc[2] - 6, truc[2] - truc[1], truc[2] - truc[1])
+            stp.add_interval_var_solution(var, truc[4], truc[1], truc[2] , truc[2] - truc[1], truc[2] - truc[1])
             
         stp.print_solution()
         print("AUREVOIR")

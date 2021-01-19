@@ -19,8 +19,8 @@ def create_solution_from_PPC_result(ppc_solution):
         #print(name)
         if not "op" in name :
             if interval.is_present() : 
-                start = datetime.fromtimestamp(date_converter.convert_to_timestamp(interval.get_start()))
-                end = datetime.fromtimestamp(date_converter.convert_to_timestamp(interval.get_end()))
+                start = date_converter.convert_to_timestamp(interval.get_start())
+                end = date_converter.convert_to_timestamp(interval.get_end())
                 sol.loc[i] = [name[-6:], start, end, name[:-6], True ]
             else:
                  sol.loc[i] = [name[-6:],None, None, name[:-6], False]
