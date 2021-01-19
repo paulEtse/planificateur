@@ -59,14 +59,7 @@ class SolveurPPC:
 
         kits_pulse_for_choice = []
         for i in range(len(self.timeOUEST)):
-<<<<<<< HEAD
-            #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matOUEST.iloc[i,2])))
-            #min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
-            min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
-
-=======
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
->>>>>>> fecabc867a9280ea34b01c2c1c84567cab383964
 
             print(min_start_time, self.req_matOUEST.iloc[i,2])
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
@@ -123,14 +116,7 @@ class SolveurPPC:
         table_occupied_EAST = []
 
         for i in range(len(self.timeEST)):
-<<<<<<< HEAD
-            #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matEST.iloc[i,2])))
-            #min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
-            min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
-
-=======
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
->>>>>>> fecabc867a9280ea34b01c2c1c84567cab383964
 
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
             qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
@@ -323,14 +309,14 @@ class SolveurPPC:
         stp = mdl.create_empty_solution()
         print("BONJOUR")
         for var in all_tasks:
-            truc = df2[df2.Task == var.name[-6:]]
-            truc = truc[truc.Part == var.name[:-6]].values[0]
-            print(truc)
-            stp.add_interval_var_solution(var, truc[4], truc[1], truc[2] , truc[2] - truc[1], truc[2] - truc[1])
+            df3 = df2[df2.Task == var.name[-6:]]
+            df3 = df3[df3.Part == var.name[:-6]].values[0]
+            print(df3)
+            stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
-        # stp.print_solution()
-        # print("AUREVOIR")
-        # mdl.set_starting_point(stp)
+        stp.print_solution()
+        print("AUREVOIR")
+        mdl.set_starting_point(stp)
 
         ###################################
         #             SOLVING             #
