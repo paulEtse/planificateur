@@ -26,7 +26,7 @@ class SolveurPPC:
         self.start_date = datetime.timestamp(datetime(2019,11,5))
 
         self.date_all_delivery = datetime.timestamp(datetime(2019,2,2))
-        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,1,15)))
+        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
 
         self.kitting_time_max = 3 * 6
         self.kitting_time_mid = int(1.5 * 6)
@@ -39,14 +39,17 @@ class SolveurPPC:
     def print_gantt(self, solution):
         pass
 
+    
+
+    def add_constraint(self,mdl,solution,timeout):
+        baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
+       
+        r = requests.get(baseUrl + '/project/constraints')
+        yo = pd.DataFrame.from_dict(r.json()[0], orient = 'index')
+        print(yo)
 
     def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
-        # baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
-       
-        # r = requests.get(baseUrl + '/project/constraints')
-        # yo = pd.DataFrame.from_dict(r.json()[0], orient = 'index')
-        # print(yo)
         #####################################################
         # Creating interval variables for WEST module
         #####################################################
@@ -273,11 +276,11 @@ class SolveurPPC:
             return sol
         else:
             mdl = self.start_from_solution(mdl, solution)
-            sol = self.solve(mdl, timeout)
-            return sol
+            #sol = self.solve(mdl, timeout)
+            #return sol
 
     def start_from_solution(self, mdl, solution):
-        df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
+        df = Solution.generate_Solution_from_json(solution)
 
         df2 = df[df.IsPresent == True]
         print(np.asarray(df["Start"]))
@@ -292,9 +295,9 @@ class SolveurPPC:
             print(df3)
             stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
-        # stp.print_solution()
+        stp.print_solution()
         # print("AUREVOIR")
-        # mdl.set_starting_point(stp)
+        mdl.set_starting_point(stp)
 
         return mdl
 
@@ -333,8 +336,8 @@ class SolveurPPC:
         msol.print_solution()
         
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
-        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strat}_type_{searchType}_k_{k}")
-        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strat}_type_{searchType}_k_{k}")
+        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
+        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
 
         return solution
 
