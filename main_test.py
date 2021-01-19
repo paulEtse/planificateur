@@ -1,5 +1,5 @@
 from extractor import Extract_data
-from src.solver import SolveurPPC
+#from src.solver import SolveurPPC
 from src import date_converter
 from datetime import datetime, timedelta
 import pandas as pd
