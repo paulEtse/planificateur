@@ -418,6 +418,7 @@ class SolveurPPC:
         last_solution = last_solution[last_solution.IsPresent == True]
         
         need_solve_again = True
+        list_tasks_modified = []
 
         date = datetime(annee,mois,jour)
         date_timestamp = datetime.timestamp(date)
@@ -532,6 +533,7 @@ class SolveurPPC:
                     if current_date < date:
                         #maj min (:= date) de la tache d'index tasks_EST_i[i] et de nom tasks_EST[i] ======================
                         self.maj_date_min_task(date, tasks_EST[i]) #TODO
+                        list_tasks_modified.append((tasks_EST[i], date))
                         found_min_inf = True
                         list_tasks_min_inf.append(tasks_EST[i])
         
@@ -541,6 +543,7 @@ class SolveurPPC:
                     if current_date < date:
                         #maj min (:= date) de la tache d'index tasks_OUEST_i[i] et de nom tasks_OUEST[i] ==================
                         self.maj_date_min_task(date, tasks_OUEST[i]) #TODO
+                        list_tasks_modified.append((tasks_OUEST[i], date))
                         found_min_inf = True
                         list_tasks_min_inf.append(tasks_OUEST[i])
             
@@ -576,6 +579,7 @@ class SolveurPPC:
                         if max_livraison < date_origin:
                             #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
                             self.maj_date_min_task(max_livraison, current_task) #TODO
+                            list_tasks_modified.append((current_task, max_livraison))
                             found_min_mieux = True
         
             if found_tasks_OUEST:
@@ -597,6 +601,7 @@ class SolveurPPC:
                         if max_livraison < date_origin:
                             #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
                             self.maj_date_min_task(max_livraison, current_task) #TODO
+                            list_tasks_modified.append((current_task, max_livraison))
                             found_min_mieux = True
             
             if (not found_min_mieux):
@@ -623,7 +628,8 @@ class SolveurPPC:
                 print("tâches trouvées pour la référence, dont la contrainte de départ est impactée : aucune ne démarre avant cette nouvelle date")
                 need_solve_again = False
 
-        return need_solve_again
+        #list_tasks_modified = liste de tuples (nom_tache , nouvelle_date_min)
+        return need_solve_again, list_tasks_modified
     
     
         
