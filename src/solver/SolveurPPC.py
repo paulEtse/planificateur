@@ -11,7 +11,7 @@ from src import Solution, date_converter
 import sys
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
+from datetime import datetime, timedelta
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -39,14 +39,41 @@ class SolveurPPC:
     def print_gantt(self, solution):
         pass
 
+    
+
+    def add_constraint(self, solution): #,solution,timeout
+        baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
+        r = requests.get(baseUrl + '/project/constraints')
+
+        mdl = self.create_model()
+        mdl,sol = self.start_from_solution(mdl, solution)
+
+        for i in range(len(r.json())): 
+            yo = pd.DataFrame.from_dict(r.json()[i], orient = 'index')
+            print(yo)
+            date_de_prise_en_compte = datetime.strptime(yo.iloc[1,0][:10],"%Y-%m-%d") + timedelta(days=1)
+            date_modifiee = datetime.strptime(yo.iloc[2,0], "%Y-%m-%d")
+            print(date_modifiee)
+            print(date_de_prise_en_compte)
+            sol = sol[sol.IsPresent == True]
+            if(self.apply_and_check_nouvelle_livraison(date_modifiee.day, date_modifiee.month, date_modifiee.year, yo.iloc[0,0], solution)):
+                print(sol)
+                for (Task, Start, Finish, Part, Ispresent) in sol.values:
+                    if date_converter.convert_to_timestamp(int(Start)) < datetime.timestamp(date_de_prise_en_compte):
+                        print(Task, Start, Finish, Part, Ispresent)
+
+                # for var in mdl.get_all_variables():
+                #     print(var)
+
+                
+
+            else:
+                print(False)
+                #return("solution deja ok pas de modif") #TODO
+                
 
     def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
-        # baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
-       
-        # r = requests.get(baseUrl + '/project/constraints')
-        # yo = pd.DataFrame.from_dict(r.json()[0], orient = 'index')
-        # print(yo)
         #####################################################
         # Creating interval variables for WEST module
         #####################################################
@@ -272,15 +299,15 @@ class SolveurPPC:
             sol = self.solve(mdl, timeout)
             return sol
         else:
-            mdl = self.start_from_solution(mdl, solution)
+            mdl, stp = self.start_from_solution(mdl, solution)
             sol = self.solve(mdl, timeout)
             return sol
 
     def start_from_solution(self, mdl, solution):
-        df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
+        df = Solution.generate_Solution_from_json(solution)
 
         df2 = df[df.IsPresent == True]
-        print(np.asarray(df["Start"]))
+        #print(np.asarray(df["Start"]))
         df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
         df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
 
@@ -288,15 +315,18 @@ class SolveurPPC:
         print("BONJOUR")
         for var in mdl.get_all_variables():
             df3 = df2[df2.Task == var.name[-6:]]
-            df3 = df3[df3.Part == var.name[:-6]].values[0]
-            print(df3)
-            stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
+            df3 = df3[df3.Part == var.name[:-6]].values
+            if len(df3) >0 :
+                #print(df3)
+                df3 = df3[0]
+                
+                stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
         stp.print_solution()
         # print("AUREVOIR")
         mdl.set_starting_point(stp)
 
-        return mdl
+        return mdl,df2
 
 
     def solve(self, mdl, timeout, strategy = 7, searchType = "Restart"):
@@ -333,8 +363,8 @@ class SolveurPPC:
         msol.print_solution()
         
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
-        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strat}_type_{searchType}_k_{k}")
-        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strat}_type_{searchType}_k_{k}")
+        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
+        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
 
         return solution
 
@@ -585,7 +615,7 @@ class SolveurPPC:
             
             sol_tasks_to_check = last_solution[last_solution.Task.isin(list_tasks_min_inf)]
 
-            sol_tasks_inf = [sol_tasks_to_check.Start <= date_timestamp*1000]
+            sol_tasks_inf = sol_tasks_to_check[sol_tasks_to_check.Start <= date_timestamp*1000]
         
             starts_task_found = (len(sol_tasks_inf.Start) != 0)
             

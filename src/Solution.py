@@ -60,7 +60,7 @@ def taux_occupation_operateurs(sol):
 
     #initialisation dataframe occupation
     time_min = df2["Start"].min()
-    time_max = df2["Finish"].max()
+    time_max = df2["Finish"].max()-1
 
     list_occupations = []
 
@@ -71,12 +71,27 @@ def taux_occupation_operateurs(sol):
     #modification list_occupations
     for task in df2.itertuples():
         first_time = task.Start - time_min
-        last_time = task.Finish - time_min
+        last_time = task.Finish - 1 - time_min
 
         if (task.Part == "kitting " or task.Part == "meca "):
             #print("ok meca or kitting")
+            nb_meca_to_add = 1
+
+            #Cas des kitting a plusieurs meca
+            if (task.Part == "kitting "):
+                #temps passé pour 18 unités de travail de tâche
+                time_task = last_time - first_time + 1
+                if (time_task == 9):
+                    nb_meca_to_add = 2
+                elif (time_task == 6):
+                    nb_meca_to_add = 3
+                else:
+                    #deja 1 meca pris en compte
+                    #print("temps du kitting : ", time_task)
+                    pass
+
             for t in range(first_time, last_time + 1):
-                list_occupations[t][0] = list_occupations[t][0]+1
+                list_occupations[t][0] = list_occupations[t][0]+nb_meca_to_add
 
         elif (task.Part == "qc "):
             #print("ok qc")

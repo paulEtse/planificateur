@@ -1,5 +1,5 @@
 from extractor import Extract_data
-from src.solver import SolveurPPC
+#from src.solver import SolveurPPC
 from src import date_converter
 from datetime import datetime, timedelta
 import pandas as pd
@@ -39,10 +39,17 @@ import numpy as np
 
 #-------------------------------------------------------------------------------------------
 
-sol = "./Solution_PPC_60_sec_0_type_Restart_k_1.json"
+# sol = "./Solution_PPC_60_sec_0_type_Restart_k_1.json"
 
-# #test tache ouest - plus tard
-# #apply_and_check_nouvelle_livraison(2, 4, 2019, "W10111C", sol)
+# # #test tache ouest - plus tard
+# # #apply_and_check_nouvelle_livraison(2, 4, 2019, "W10111C", sol)
 
-# #test taux occupation
-Solution.taux_occupation_operateurs(sol)
+# # #test taux occupation
+# Solution.taux_occupation_operateurs(sol)
+livraisons = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
+livraisons.to_json(path_or_buf ="./data/livraison guides.json",date_unit='s')
+
+livraison2 = pd.read_json(path_or_buf="./data/livraison guides.json",convert_dates=['livraison au MAG AIT'])
+
+print(livraisons)
+print(livraison2)
