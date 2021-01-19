@@ -26,7 +26,7 @@ class SolveurPPC:
         self.start_date = datetime.timestamp(datetime(2019,11,5))
 
         self.date_all_delivery = datetime.timestamp(datetime(2019,2,2))
-        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,1,15)))
+        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
 
         self.kitting_time_max = 3 * 6
         self.kitting_time_mid = int(1.5 * 6)
@@ -292,9 +292,9 @@ class SolveurPPC:
             print(df3)
             stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
-        # stp.print_solution()
+        stp.print_solution()
         # print("AUREVOIR")
-        # mdl.set_starting_point(stp)
+        mdl.set_starting_point(stp)
 
         return mdl
 
