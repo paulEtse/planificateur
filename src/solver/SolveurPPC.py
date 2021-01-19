@@ -59,7 +59,8 @@ class SolveurPPC:
             print(date_de_prise_en_compte)
             
             sol = sol[sol.IsPresent == True]
-            if(self.apply_and_check_nouvelle_livraison(date_modifiee.day, date_modifiee.month, date_modifiee.year, yo.iloc[0,0], solution)):
+            need_new_solve, l = self.apply_and_check_nouvelle_livraison(date_modifiee.day, date_modifiee.month, date_modifiee.year, yo.iloc[0,0], solution)
+            if(need_new_solve):
                 #print(sol)
                 all_tasks = mdl.get_all_variables()
                 #print(datetime.timestamp(date_de_prise_en_compte))
@@ -70,10 +71,14 @@ class SolveurPPC:
                         for task in all_tasks:
                             if Part + Task == task.get_name():
                                 task.set_start(Start)
+
+                for taskname, date in l:
+                    print(taskname + " " + str(date_converter.convert_to_work_time(datetime.timestamp(date))))
+                    for task in all_tasks:
+                        if taskname in task.get_name():
+                            task.set_start_min(date_converter.convert_to_work_time(datetime.timestamp(date)))
                 
-                print(self.req_matEST)
-                print(self.req_matOUEST)
-                #self.solve(mdl, 24)
+                self.solve(mdl, 24)
                 # for var in mdl.get_all_variables():
                 #     print(var)
 
