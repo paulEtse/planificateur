@@ -22,10 +22,10 @@ class SolveurPPC:
     def __init__(self):
         self.timeOUEST, self.req_matOUEST, self.req_taskOUEST = Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
         self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
-        self.start_date = datetime.timestamp(datetime(2019,11,2))
+        self.start_date = datetime.timestamp(datetime(2019,11,5))
 
-        self.date_all_delivery = datetime.timestamp(datetime(2019,11,2))
-        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
+        self.date_all_delivery = datetime.timestamp(datetime(2019,2,2))
+        self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,1,15)))
 
         self.kitting_time_max = 3 * 6
         self.kitting_time_mid = int(1.5 * 6)
@@ -59,8 +59,8 @@ class SolveurPPC:
         kits_pulse_for_choice = []
         for i in range(len(self.timeOUEST)):
             #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matOUEST.iloc[i,2])))
-            min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
-            #min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
+            #min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+            min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
 
 
             print(min_start_time, self.req_matOUEST.iloc[i,2])
@@ -148,8 +148,8 @@ class SolveurPPC:
 
         for i in range(len(self.timeEST)):
             #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matEST.iloc[i,2])))
-            min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
-            #min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
+            #min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+            min_start_time = int(date_converter.convert_to_work_time(self.date_all_delivery))
 
 
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
@@ -378,24 +378,24 @@ class SolveurPPC:
 
 
 
-        df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
+        # df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
         
-        df2 = df[df.IsPresent == True]
+        # df2 = df[df.IsPresent == True]
 
-        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
-        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+        # df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+        # df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
 
-        stp = mdl.create_empty_solution()
-        print("BONJOUR")
-        for var in all_tasks:
-            truc = df2[df2.Task == var.name[-6:]]
-            truc = truc[truc.Part == var.name[:-6]].values[0]
-            print(truc)
-            stp.add_interval_var_solution(var, truc[4], truc[1] - 6, truc[2] - 6, truc[2] - truc[1], truc[2] - truc[1])
+        # stp = mdl.create_empty_solution()
+        # print("BONJOUR")
+        # for var in all_tasks:
+        #     truc = df2[df2.Task == var.name[-6:]]
+        #     truc = truc[truc.Part == var.name[:-6]].values[0]
+        #     print(truc)
+        #     stp.add_interval_var_solution(var, truc[4], truc[1] - 6, truc[2] - 6, truc[2] - truc[1], truc[2] - truc[1])
             
-        stp.print_solution()
-        print("AUREVOIR")
-        mdl.set_starting_point(stp)
+        # stp.print_solution()
+        # print("AUREVOIR")
+        # mdl.set_starting_point(stp)
 
         # first_sol = mdl.propagate()
         # mdl.set_starting_point(first_sol.get_solution())
@@ -409,6 +409,8 @@ class SolveurPPC:
         print(solution)
         Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec_{strat}_type_{searchType}_k_{k}")
         Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec_{strat}_type_{searchType}_k_{k}")
+
+        return solution
 
 
     def get_start(self, sol):
