@@ -2,6 +2,7 @@ import pandas as pd
 from src import date_converter
 import pandas as pd
 from datetime import datetime
+import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -33,6 +34,7 @@ def create_solution_from_PPC_result(ppc_solution):
 
 def generate_Solution_from_json(json):
     solution = pd.read_json(path_or_buf=json)
+
     return(solution)
 
 def generate_json_from_Solution(solution, name):
@@ -42,17 +44,19 @@ def generate_json_from_Solution(solution, name):
 def create_html_gantt_from_solution(solution, name): 
     print(solution)
     solution = solution[solution.IsPresent == True]
+    solution["Start"] = solution["Start"].apply(lambda a : a*1000)
+    solution["Finish"] = solution["Finish"].apply(lambda a :a*1000)
     fig = ff.create_gantt(solution,index_col='Part',show_colorbar=True, group_tasks=True)
     fig.write_html("./" + name + ".html")
 
 
 def taux_occupation_operateurs(sol):
-    df = Solution.generate_Solution_from_json(sol)
+    df = generate_Solution_from_json(sol)
             
     df2 = df[df.IsPresent == True]
 
-    df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)) - 6 )
-    df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)) - 6 )
+    df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
+    df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
 
     #initialisation dataframe occupation
     time_min = df2["Start"].min()

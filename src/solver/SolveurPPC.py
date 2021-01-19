@@ -292,9 +292,9 @@ class SolveurPPC:
             print(df3)
             stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
-        stp.print_solution()
-        print("AUREVOIR")
-        mdl.set_starting_point(stp)
+        # stp.print_solution()
+        # print("AUREVOIR")
+        # mdl.set_starting_point(stp)
 
         return mdl
 
