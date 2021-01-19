@@ -279,7 +279,6 @@ class SolveurPPC:
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
         strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
@@ -299,24 +298,24 @@ class SolveurPPC:
         #      RESTART FORM SOLUTION      #
         ###################################
         
-        df = Solution.generate_Solution_from_json("./Solution_PPC_10_sec_0_type_Restart_k_1.json")
+        # df = Solution.generate_Solution_from_json("./Solution_PPC_60_sec_0_type_Restart_k_1.json")
 
-        df2 = df[df.IsPresent == True]
-        print(np.asarray(df["Start"]))
-        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
-        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
+        # df2 = df[df.IsPresent == True]
+        # print(np.asarray(df["Start"]))
+        # df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
+        # df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
 
-        stp = mdl.create_empty_solution()
-        print("BONJOUR")
-        for var in all_tasks:
-            truc = df2[df2.Task == var.name[-6:]]
-            truc = truc[truc.Part == var.name[:-6]].values[0]
-            print(truc)
-            stp.add_interval_var_solution(var, truc[4], truc[1], truc[2] , truc[2] - truc[1], truc[2] - truc[1])
+        # stp = mdl.create_empty_solution()
+        # print("BONJOUR")
+        # for var in all_tasks:
+        #     truc = df2[df2.Task == var.name[-6:]]
+        #     truc = truc[truc.Part == var.name[:-6]].values[0]
+        #     print(truc)
+        #     stp.add_interval_var_solution(var, truc[4], truc[1], truc[2] , truc[2] - truc[1], truc[2] - truc[1])
             
-        stp.print_solution()
-        print("AUREVOIR")
-        mdl.set_starting_point(stp)
+        # stp.print_solution()
+        # print("AUREVOIR")
+        # mdl.set_starting_point(stp)
 
         ###################################
         #             SOLVING             #
