@@ -1,7 +1,7 @@
 import pandas as pd
 from src import date_converter
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
@@ -56,31 +56,32 @@ def taux_occupation_operateurs(sol):
 
 def taux_occupation_operateurs_by_weeks(sol, nb_weeks):
     df = generate_Solution_from_json(sol)
-
+    df = df[df.IsPresent == True]
     all_proportions = []
 
     #calcul nb portions
     timestamp_min = df["Start"].min()
     timestamp_max = df["Finish"].max()-1
 
-    min_datetime = datetime.datetime.fromtimestamp(date_min)
-    max_datetime = datetime.datetime.fromtimestamp(date_max)
+    min_datetime = datetime.fromtimestamp(timestamp_min)
+    max_datetime = datetime.fromtimestamp(timestamp_max)
 
     i = 0
     current_datetime = min_datetime
     while(current_datetime < max_datetime):
         #calcul des dates de début, de fin, et de prochain début
-        end_period_datetime = current_datetime + datetime.timedelta(days=(7*nb_weeks -1))
-        next_period_datetime = end_period_datetime + datetime.timedelta(days=1)
+        end_period_datetime = current_datetime + timedelta(days=(7*nb_weeks -1))
+        next_period_datetime = end_period_datetime + timedelta(days=1)
         last_datetime = min(max_datetime, end_period_datetime)
 
-        current_timestamp = datetime.datetime.timestamp(current_datetime)
-        next_timestamp = datetime.datetime.timestamp(next_period_datetime)
+        current_timestamp = datetime.timestamp(current_datetime)
+        next_timestamp = datetime.timestamp(next_period_datetime)
 
         all_proportions.append([current_datetime, last_datetime])
         
         #filtre sur le dataframe
-        current_df = df[df.Start < next_timestamp and df.Finish >= current_timestamp]
+        temp = df[df.Start < next_timestamp]
+        current_df = temp[temp.Finish >= current_timestamp]
 
         #calcul du taux d'occupation et ajout au résultat final
         period_result = taux_occupation_operateurs_dataframe(current_df, current_timestamp, next_timestamp)
@@ -103,10 +104,11 @@ def taux_occupation_operateurs_dataframe(sol_df, start_point = None, next_start_
     time_min = df2["Start"].min()
     time_max = df2["Finish"].max()-1
 
-    time_start_point = date_converter.convert_to_work_time(start_point)
-    time_next_start_point = date_converter.convert_to_work_time(next_start_point)
-
+    
     if(start_point != None and next_start_point != None):
+        time_start_point = date_converter.convert_to_work_time(start_point)
+        time_next_start_point = date_converter.convert_to_work_time(next_start_point)
+
         time_min = max(time_min, time_start_point)
         time_max = min(time_max, time_next_start_point-1)
 
@@ -152,7 +154,7 @@ def taux_occupation_operateurs_dataframe(sol_df, start_point = None, next_start_
     df_final = pd.DataFrame(np.array(list_occupations), index = list(range(time_max - time_min + 1)), columns = ['nb_meca_working', 'nb_qc_working'])
 
     #calculs des pourcentages
-    total_len = len(time_max - time_min + 1)
+    total_len = time_max - time_min + 1
     pourc_meca = []
     pourc_qc = []
 

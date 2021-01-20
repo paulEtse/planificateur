@@ -6,6 +6,18 @@ import pandas as pd
 from src import Solution
 import numpy as np
 
+from dateutil import parser
+from datetime import datetime
+import requests
+import os
+import time
+
+from src.hidden_prints import HiddenPrints
+from src import Solution
+from src.solver.SolveurPPC import SolveurPPC
+
+from docplex.cp.config import context
+
 
 # date = datetime(2019,11,4,1,20,0)
 
@@ -39,13 +51,13 @@ import numpy as np
 
 #-------------------------------------------------------------------------------------------
 
-sol = "./Solution_PPC_60_sec_0_type_Restart_k_1.json"
-
+r = requests.get("https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev/project/solution?gantt=0")
+#sol_df = Solution
 # # #test tache ouest - plus tard
 # # #apply_and_check_nouvelle_livraison(2, 4, 2019, "W10111C", sol)
 
 #test taux occupation
-Solution.taux_occupation_operateurs(sol)
+Solution.taux_occupation_operateurs_by_weeks(r.json(),1)
 
 
 # livraisons = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
