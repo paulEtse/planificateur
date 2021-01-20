@@ -173,8 +173,8 @@ def taux_occupation_operateurs_dataframe(sol_df, start_point = None, next_start_
     df_meca = pd.DataFrame(np.array(pourc_meca), columns = ['nb_meca_working', 'pourcentage']).sort_values(by = 'nb_meca_working')
     df_qc = pd.DataFrame(np.array(pourc_qc), columns = ['nb_qc_working', 'pourcentage']).sort_values(by = 'nb_qc_working')
 
-    print("proportions des opérateurs méca: \n" , df_meca)
-    print("proportions des opérateurs qc: \n" , df_qc)
+    #print("proportions des opérateurs méca: \n" , df_meca)
+    #print("proportions des opérateurs qc: \n" , df_qc)
 
     #print("time_min : ", time_min)
     #print("time_max : ", time_max)
