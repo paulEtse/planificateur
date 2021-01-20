@@ -1,6 +1,8 @@
 from dateutil import parser
 from datetime import datetime
 import requests
+import os
+import time
 
 from src.solver.SolveurPPC import SolveurPPC
 
@@ -8,7 +10,9 @@ from docplex.cp.config import context
 context.solver.agent = 'local'
 context.solver.local.execfile = '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'
 
-#time.sleep(40) #Security
+shutdown = False
+if shutdown:
+	time.sleep(40) #Security
 
 baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
 
@@ -19,7 +23,7 @@ changes = r.status_code < 400
 while changes:
     startAt = datetime.now()
     ppc = SolveurPPC()
-    ppc.create_model(data['METHOD'], 60*data['DURATION'])
+    #ppc.create_model(data['METHOD'], 60*data['DURATION'])
 
     r = requests.get(baseUrl + '/project/parameters')
     data = r.json()
@@ -37,4 +41,5 @@ while changes:
 
     changes = False
 
-#os.system('sudo shutdown now -h')
+if shutdown:
+	os.system('sudo shutdown now -h')
