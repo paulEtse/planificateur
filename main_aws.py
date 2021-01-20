@@ -4,12 +4,14 @@ import requests
 import os
 import time
 
+from src.hidden_prints import HiddenPrints
 from src import Solution
 from src.solver.SolveurPPC import SolveurPPC
 
 from docplex.cp.config import context
 context.solver.agent = 'local'
-context.solver.local.execfile = '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'
+context.solver.local.execfile = '/Applications/CPLEX_Studio1210/cpoptimizer/bin/x86-64_osx/cpoptimizer'
+#context.solver.local.execfile = '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'
 
 shutdown = False
 if shutdown:
@@ -27,9 +29,10 @@ while changes:
         break
 
     startAt = datetime.utcnow()
-    ppc = SolveurPPC()
-    starting_solution = Solution.generate_Solution_from_json(r.json())
-    solution = ppc.add_constraint(starting_solution, 60*data['DURATION'])
+    with HiddenPrints():
+        ppc = SolveurPPC()
+        starting_solution = Solution.generate_Solution_from_json(r.json())
+        solution = ppc.add_constraint(starting_solution, 60*data['DURATION'])
 
     requests.put(baseUrl + '/project/solution', data=solution.to_json(), headers={"Content-Type": "application/json"})
 
