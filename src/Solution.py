@@ -34,15 +34,14 @@ def create_solution_from_PPC_result(ppc_solution):
 
 def generate_Solution_from_json(json):
     solution = pd.read_json(path_or_buf=json)
-
     return(solution)
 
-def generate_json_from_Solution(solution, name):
-    solution.to_json(path_or_buf ="./" + name + ".json")
+def generate_json_from_Solution(solution):
+    return solution.to_json()
 
 
 def create_html_gantt_from_solution(solution, name): 
-    print(solution)
+    #print(solution)
     solution = solution[solution.IsPresent == True]
     solution["Start"] = solution["Start"].apply(lambda a : a*1000)
     solution["Finish"] = solution["Finish"].apply(lambda a :a*1000)
