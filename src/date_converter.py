@@ -17,19 +17,19 @@ def isFreeTime(date):
 
 
 def start1_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=0, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
 
 
 def start2_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=15, minute=0)
 
 
 def end1_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=7, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=14, minute=0)
 
 
 def end2_of_date(date):
-    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=14, minute=0)
+    return datetime.datetime(year=date.year, month=date.month, day=date.day, hour=22, minute=0)
 
 
 def next_start(date):
@@ -74,6 +74,7 @@ def end_date_calc(start_date, duration):
 
 
 def convert_to_work_time(ts):
+    #print(ts)
     cur_ts = datetime.datetime.timestamp(startdate)
     time_to_return = 0
     #print("while cond",ts - 60*60*24)
@@ -89,7 +90,10 @@ def convert_to_work_time(ts):
             cur_ts += 60*60*24
     cur_date = datetime.date.fromtimestamp(cur_ts)
     if(not(cur_date.isoweekday() > 5 or cur_date in holidays.FR())):
-        time_to_return += int((ts - cur_ts)/600)
+        if (int((ts - cur_ts)/600) <= 14*6):
+            time_to_return += int((ts - cur_ts)/600)
+        else:
+            time_to_return += 2*7*6
     return(time_to_return )
 
 

@@ -11,17 +11,23 @@ from src import Solution, date_converter
 import sys
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
+from datetime import datetime, timedelta
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import plotly.io as pio
+import requests
+import json
+import numpy as np
 
 class SolveurPPC:  
     def __init__(self):
         self.timeOUEST, self.req_matOUEST, self.req_taskOUEST = Extract_data.extract_tasks_from_excel(Extract_data.pathOUEST)
         self.timeEST, self.req_matEST, self.req_taskEST = Extract_data.extract_tasks_from_excel(Extract_data.pathEST)
-        self.start_date = datetime.timestamp(datetime(2019,12,1))
+        self.start_date = datetime.timestamp(datetime(2019,11,5))
+
+        self.date_all_delivery = datetime.timestamp(datetime(2019,2,2))
         self.max_end_timestamp = date_converter.convert_to_work_time(datetime.timestamp(datetime(2020,3,15)))
+
         self.kitting_time_max = 3 * 6
         self.kitting_time_mid = int(1.5 * 6)
         self.kitting_time_min = 6
@@ -33,11 +39,51 @@ class SolveurPPC:
     def print_gantt(self, solution):
         pass
 
+    
 
-    def create_model(self,strat,timeout):
+    def add_constraint(self, solution, timeout): 
+        baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
+        r = requests.get(baseUrl + '/project/constraints')
+
+        mdl = self.create_model()
+        mdl,sol = self.start_from_solution(mdl, solution)
+
+        yo = pd.DataFrame.from_dict(r.json()[-1], orient = 'index')
+        date_de_prise_en_compte = datetime.strptime(yo.iloc[1,0][:10],"%Y-%m-%d") + timedelta(days=1)
+        date_de_prise_en_compte = date_de_prise_en_compte + timedelta(days = -388)
+        all_tasks = mdl.get_all_variables()
+        #print(date_de_prise_en_compte)
+        for (Task, Start, Finish, Part, Ispresent) in sol.values:
+                    #print(date_converter.convert_to_timestamp(int(Start)))
+                    if date_converter.convert_to_timestamp(int(Start)) < datetime.timestamp(date_de_prise_en_compte):
+                        #print(Task, Start, Finish, Part, Ispresent)
+                        for task in all_tasks:
+                            if Part + Task == task.get_name():
+                                task.set_start(Start)
+                                print("task : ", task, " set at : ", Start)
+        modified = False
+        for i in range(len(r.json())):
+            yo = pd.DataFrame.from_dict(r.json()[i], orient = 'index')
+            #print(yo)
+            date_modifiee = datetime.strptime(yo.iloc[2,0], "%Y-%m-%d")
+            #print(date_modifiee)
+            sol = sol[sol.IsPresent == True]
+            need_new_solve, l = self.apply_and_check_nouvelle_livraison(date_modifiee.day, date_modifiee.month, date_modifiee.year, yo.iloc[0,0], solution)
+            if(need_new_solve):
+                modified = True
+                for taskname, date in l:
+                    print(taskname + " " + str(date_converter.convert_to_work_time(datetime.timestamp(date))))
+                    for task in all_tasks:
+                        if taskname in task.get_name():
+                            task.set_start_min(date_converter.convert_to_work_time(datetime.timestamp(date)))
+        if modified :
+            return self.solve(mdl, timeout)
+        else:
+            return None
+                
+
+    def create_model(self):
         mdl = CpoModel(name = "TAS Scheduling")
-       
-       
         #####################################################
         # Creating interval variables for WEST module
         #####################################################
@@ -50,8 +96,8 @@ class SolveurPPC:
 
         kits_pulse_for_choice = []
         for i in range(len(self.timeOUEST)):
-            #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matOUEST.iloc[i,2])))
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+
             print(min_start_time, self.req_matOUEST.iloc[i,2])
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
             qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
@@ -68,10 +114,6 @@ class SolveurPPC:
             meca_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = meca_length, name = "meca " + self.timeOUEST.index[i])
             qc_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = qc_length, name = "qc " + self.timeOUEST.index[i])
 
-            # mdl.add(mdl.end_before_start(kit_interval1mec, meca_interval))
-            # mdl.add(mdl.end_before_start(kit_interval2mec, meca_interval))
-            # mdl.add(mdl.end_before_start(kit_interval3mec, meca_interval))
-
             table_slot_occupied_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = (0, 9999999999999), name = "Table occupied " + self.timeOUEST.index[i])
             table_occupied_WEST += [table_slot_occupied_interval]
 
@@ -80,50 +122,25 @@ class SolveurPPC:
 
             mdl.add(mdl.start_at_end(table_slot_occupied_interval, kit_interval))
             mdl.add(mdl.start_at_end(meca_interval, table_slot_occupied_interval))
-
-            # WEST_vars += [kit_interval1mec]
-            # WEST_vars += [kit_interval2mec]
-            # WEST_vars += [kit_interval3mec]
             
             WEST_vars += [kit_interval]
             WEST_vars += [meca_interval]
             WEST_vars += [qc_interval]
 
             if i < 19:
-
-                # MS1_vars += [kit_interval1mec]
-                # MS1_vars += [kit_interval2mec]
-                # MS1_vars += [kit_interval3mec]
-
                 MS1_vars += [kit_interval]
                 MS1_vars += [meca_interval]
                 MS1_vars += [qc_interval]
 
             elif i >= 45:
-
-                # GTW_vars += [kit_interval1mec]
-                # GTW_vars += [kit_interval2mec]
-                # GTW_vars += [kit_interval3mec]
-
                 GTW_vars += [kit_interval]
                 GTW_vars += [meca_interval]
                 GTW_vars += [qc_interval]
             
             else:
-
-                # MS4_vars += [kit_interval1mec]
-                # MS4_vars += [kit_interval2mec]
-                # MS4_vars += [kit_interval3mec]
-
                 MS4_vars += [kit_interval]
                 MS4_vars += [meca_interval]
                 MS4_vars += [qc_interval]
-
-        # self.print_interval_vars_list(MS1_vars)
-        # print("#################################")
-        # self.print_interval_vars_list(MS4_vars)
-        # print("#################################")
-        # self.print_interval_vars_list(GTW_vars)
 
 
         ######################################################
@@ -136,8 +153,8 @@ class SolveurPPC:
         table_occupied_EAST = []
 
         for i in range(len(self.timeEST)):
-            #min_start_time = int(max(0, date_converter.convert_to_work_time(self.req_matEST.iloc[i,2])))
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
+
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
             qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
             
@@ -153,10 +170,6 @@ class SolveurPPC:
             meca_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = meca_length, name = "meca " + self.timeEST.index[i])
             qc_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = qc_length, name = "qc " + self.timeEST.index[i])
 
-            # mdl.add(mdl.end_before_start(kit_interval1mec, meca_interval))
-            # mdl.add(mdl.end_before_start(kit_interval2mec, meca_interval))
-            # mdl.add(mdl.end_before_start(kit_interval3mec, meca_interval))
-
             table_slot_occupied_interval = mdl.interval_var(start = (min_start_time, self.max_end_timestamp), length = (0, 9999999999999), name = "Table occupied " + self.timeEST.index[i])
             table_occupied_EAST += [table_slot_occupied_interval]
 
@@ -166,49 +179,24 @@ class SolveurPPC:
             mdl.add(mdl.start_at_end(table_slot_occupied_interval, kit_interval))
             mdl.add(mdl.start_at_end(meca_interval, table_slot_occupied_interval))
 
-            # EAST_vars += [kit_interval1mec]
-            # EAST_vars += [kit_interval2mec]
-            # EAST_vars += [kit_interval3mec]
-
             EAST_vars += [kit_interval]
             EAST_vars += [meca_interval]
             EAST_vars += [qc_interval]
             
             if i < 11:
-               
-                # FOV_vars += [kit_interval1mec]
-                # FOV_vars += [kit_interval2mec]
-                # FOV_vars += [kit_interval3mec]
-
                 FOV_vars += [kit_interval]
                 FOV_vars += [meca_interval]
                 FOV_vars += [qc_interval]
 
             elif i >= 25:
-
-                # MS3_vars += [kit_interval1mec]
-                # MS3_vars += [kit_interval2mec]
-                # MS3_vars += [kit_interval3mec]
-
                 MS3_vars += [kit_interval]
                 MS3_vars += [meca_interval]
                 MS3_vars += [qc_interval]
 
             else:
-
-                # MS2_vars += [kit_interval1mec]
-                # MS2_vars += [kit_interval2mec]
-                # MS2_vars += [kit_interval3mec]
-
                 MS2_vars += [kit_interval]
                 MS2_vars += [meca_interval]
                 MS2_vars += [qc_interval]
-
-        # self.print_interval_vars_list(FOV_vars)
-        # print("#################################")
-        # self.print_interval_vars_list(MS2_vars)
-        # print("#################################")
-        # self.print_interval_vars_list(MS3_vars)
 
         ##################################################
         # Setting requirement relations between interval variables
@@ -219,7 +207,6 @@ class SolveurPPC:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
                             if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
-                                #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in MS4_vars:
@@ -228,7 +215,6 @@ class SolveurPPC:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
                             if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
-                                #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in GTW_vars:
@@ -237,7 +223,6 @@ class SolveurPPC:
                     for j in range(len(self.req_taskOUEST.iloc[i, 0])):
                         for other_task in WEST_vars:
                             if self.req_taskOUEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
-                                #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in MS2_vars:
@@ -246,7 +231,6 @@ class SolveurPPC:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
                             if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
-                                #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in MS3_vars:
@@ -255,7 +239,6 @@ class SolveurPPC:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
                             if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
-                                #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
         #print("##############################################")
         for task in FOV_vars:
@@ -264,7 +247,6 @@ class SolveurPPC:
                     for j in range(len(self.req_taskEST.iloc[i, 0])):
                         for other_task in EAST_vars:
                             if self.req_taskEST.iloc[i, 0][j] in other_task.name and "qc" in other_task.name:
-                                #print(task.name + " doit commencer après la fin de " + other_task.name)
                                 mdl.add(mdl.end_before_start(other_task, task))
 
         ##############################################
@@ -297,8 +279,7 @@ class SolveurPPC:
         mdl.add(mdl.sum(kitting_slots_EAST) <= 3)
         mdl.add(mdl.sum(kitting_slots_WEST) <= 3)
 
-        [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
-        #[mdl.add(mdl.start_of(task) % 14*6 >= 0) for task in all_tasks if "meca" in task.name]
+        [mdl.add(mdl.start_of(task) % (14*6) < 11*6) for task in all_tasks if "meca" in task.name]
 
         MS1_meca_qc = [task for task in MS1_vars if (("meca" in task.name) or ("qc" in task.name))]
         mdl.add(mdl.no_overlap(MS1_meca_qc))
@@ -320,71 +301,82 @@ class SolveurPPC:
 
         mdl.add(mdl.minimize(mdl.max([mdl.end_of(t) for t in all_tasks]) - mdl.min([mdl.start_of(t) for t in all_tasks])))
 
-        print(mdl.export_model())
+        return mdl
 
-        strategies = []
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+    def main(self, from_scratch, timeout, solution):
+        mdl = self.create_model()
+        if from_scratch:
+            sol = self.solve(mdl, timeout)
+            return sol
+        else:
+            mdl, stp = self.start_from_solution(mdl, solution)
+            sol = self.solve(mdl, timeout)
+            return sol
 
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(all_tasks)))))]
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(all_tasks)))))]
+    def start_from_solution(self, mdl, solution):
+        df = Solution.generate_Solution_from_json(solution)
 
-        strategies += [mdl.search_phase(all_tasks,varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
-
-        #print(mdl.refine_conflict())
-
-        #print("Solving model....")timeout
-        time = timeout
-        #print("Solving model....")
-        params = CpoParameters(TimeLimit=time, LogPeriod=100000, SearchType="DepthFirst")
-        mdl.add_search_phase(strategies[7])
-
-        df = Solution.generate_Solution_from_json("./Solution_PPC_15_sec.json")
-        
         df2 = df[df.IsPresent == True]
-
-        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
-        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(int(a/1000)))
+        #print(np.asarray(df["Start"]))
+        df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
+        df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
 
         stp = mdl.create_empty_solution()
-        for var in all_tasks:
-            truc = df2[df2.Task == var.name[-6:]]
-            truc = truc[truc.Part == var.name[:-6]].values[0]
-            print(truc)
-            stp.add_interval_var_solution(var, truc[4], truc[1])
+        print("BONJOUR")
+        for var in mdl.get_all_variables():
+            df3 = df2[df2.Task == var.name[-6:]]
+            df3 = df3[df3.Part == var.name[:-6]].values
+            if len(df3) >0 :
+                #print(df3)
+                df3 = df3[0]
+                
+                stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
+        stp.print_solution()
+        # print("AUREVOIR")
         mdl.set_starting_point(stp)
-        msol = mdl.solve(TimeLimit = time)#, agent='local', execfile='C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio1210\\cpoptimizer\\bin\\x64_win64\\cpoptimizer')
-        #msol = run(mdl, params)
-        #print("Solution: ")
+
+        return mdl,df2
+
+
+    def solve(self, mdl, timeout, strategy = 7, searchType = "Restart"):
+
+        strategies = []
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_impact()))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.domain_size()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_smallest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_smallest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_largest(mdl.var_local_impact()),valuechooser = mdl.select_largest(mdl.value_index(range(len(mdl.get_all_variables())))))]
+        strategies += [mdl.search_phase(mdl.get_all_variables(),varchooser=mdl.select_random_var(),valuechooser = mdl.select_random_value())]
+        
+        mdl.add(strategies[strategy])
+        msol = mdl.solve(TimeLimit = timeout, SearchType = searchType)
         msol.print_solution()
         
-        
-
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
-        print(solution)
-        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{time}_sec_{strat}")
-        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{time}_sec_{strat}")
+        Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
+        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
+
+        return solution
 
 
     def get_start(self, sol):
@@ -415,11 +407,11 @@ class SolveurPPC:
 
 
     #------------------------- FONCTIONS A CODER ---------------------------------------
-    def maj_date_min_task(new_date_min, name_task):
+    def maj_date_min_task(self, new_date_min, name_task):
         print("-----maj_date_min_task(new_date_min, name_task)-------")
         print("TODO")
 
-    def maj_date_livraison(new_date_livraison, etiq_product):
+    def maj_date_livraison(self, new_date_livraison, etiq_product):
         print("-----maj_date_livraison(new_date_livraison, etiq_product)------")
         print("TODO")
     #------------------------------------------------------------------------------------
@@ -436,6 +428,7 @@ class SolveurPPC:
         last_solution = last_solution[last_solution.IsPresent == True]
         
         need_solve_again = True
+        list_tasks_modified = []
 
         date = datetime(annee,mois,jour)
         date_timestamp = datetime.timestamp(date)
@@ -550,6 +543,7 @@ class SolveurPPC:
                     if current_date < date:
                         #maj min (:= date) de la tache d'index tasks_EST_i[i] et de nom tasks_EST[i] ======================
                         self.maj_date_min_task(date, tasks_EST[i]) #TODO
+                        list_tasks_modified.append((tasks_EST[i], date))
                         found_min_inf = True
                         list_tasks_min_inf.append(tasks_EST[i])
         
@@ -559,6 +553,7 @@ class SolveurPPC:
                     if current_date < date:
                         #maj min (:= date) de la tache d'index tasks_OUEST_i[i] et de nom tasks_OUEST[i] ==================
                         self.maj_date_min_task(date, tasks_OUEST[i]) #TODO
+                        list_tasks_modified.append((tasks_OUEST[i], date))
                         found_min_inf = True
                         list_tasks_min_inf.append(tasks_OUEST[i])
             
@@ -594,6 +589,7 @@ class SolveurPPC:
                         if max_livraison < date_origin:
                             #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
                             self.maj_date_min_task(max_livraison, current_task) #TODO
+                            list_tasks_modified.append((current_task, max_livraison))
                             found_min_mieux = True
         
             if found_tasks_OUEST:
@@ -615,6 +611,7 @@ class SolveurPPC:
                         if max_livraison < date_origin:
                             #maj min (:= max_livraison) de la tache d'index current_num_task et de nom current_task ======================
                             self.maj_date_min_task(max_livraison, current_task) #TODO
+                            list_tasks_modified.append((current_task, max_livraison))
                             found_min_mieux = True
             
             if (not found_min_mieux):
@@ -633,7 +630,7 @@ class SolveurPPC:
             
             sol_tasks_to_check = last_solution[last_solution.Task.isin(list_tasks_min_inf)]
 
-            sol_tasks_inf = [sol_tasks_to_check.Start <= date_timestamp*1000]
+            sol_tasks_inf = sol_tasks_to_check[sol_tasks_to_check.Start <= date_timestamp*1000]
         
             starts_task_found = (len(sol_tasks_inf.Start) != 0)
             
@@ -641,7 +638,8 @@ class SolveurPPC:
                 print("tâches trouvées pour la référence, dont la contrainte de départ est impactée : aucune ne démarre avant cette nouvelle date")
                 need_solve_again = False
 
-        return need_solve_again
+        #list_tasks_modified = liste de tuples (nom_tache , nouvelle_date_min)
+        return need_solve_again, list_tasks_modified
     
     
         
