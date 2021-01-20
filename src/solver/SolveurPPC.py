@@ -53,14 +53,15 @@ class SolveurPPC:
         date_de_prise_en_compte = date_de_prise_en_compte + timedelta(days = -388)
         all_tasks = mdl.get_all_variables()
         #print(date_de_prise_en_compte)
-        for (Task,Ispresent, Start, Finish, Part) in sol.values:
+        #print(sol[["Task", "Start","Finish", "Part","IsPresent"]])
+        for (Task, Start, Finish, Part, Ispresent) in sol[["Task", "Start","Finish", "Part","IsPresent"]].values:
                     #print(date_converter.convert_to_timestamp(int(Start)))
                     if date_converter.convert_to_timestamp(int(Start)) < datetime.timestamp(date_de_prise_en_compte):
                         #print(Task, Start, Finish, Part, Ispresent)
                         for task in all_tasks:
                             if Part + Task == task.get_name():
                                 task.set_start(Start)
-                                print("task : ", task, " set at : ", Start)
+                                #print("task : ", task, " set at : ", Start)
         modified = False
         for i in range(len(r.json())):
             yo = pd.DataFrame.from_dict(r.json()[i], orient = 'index')
@@ -77,6 +78,7 @@ class SolveurPPC:
                         if taskname in task.get_name():
                             task.set_start_min(date_converter.convert_to_work_time(datetime.timestamp(date)))
         if modified :
+            #print(mdl.export_model())
             return self.solve(mdl, timeout)
         else:
             return None
@@ -317,6 +319,7 @@ class SolveurPPC:
         df = Solution.generate_Solution_from_json(solution)
 
         df2 = df[df.IsPresent == True]
+        print(df2)
         #print(np.asarray(df["Start"]))
         df2["Start"] = df2["Start"].apply(lambda a : date_converter.convert_to_work_time(a))
         df2["Finish"] = df2["Finish"].apply(lambda a : date_converter.convert_to_work_time(a))
@@ -325,11 +328,12 @@ class SolveurPPC:
         print("BONJOUR")
         for var in mdl.get_all_variables():
             df3 = df2[df2.Task == var.name[-6:]]
-            df3 = df3[df3.Part == var.name[:-6]].values
+            df3 = df3[df3.Part == var.name[:-6]]
             if len(df3) >0 :
+                (Task, Start, Finish, Part, Ispresent) = df3[["Task", "Start","Finish", "Part","IsPresent"]].values[0]
                 #print(df3)
-                df3 = df3[0]
-                stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
+                #df3 = df3[0]
+                stp.add_interval_var_solution(var, Ispresent, Start, Finish , Finish - Start, Finish - Start)
             
         #stp.print_solution()
         # print("AUREVOIR")
