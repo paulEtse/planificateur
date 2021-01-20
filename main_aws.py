@@ -4,6 +4,7 @@ import requests
 import os
 import time
 
+import pandas as pd
 from src import Solution
 from src.solver.SolveurPPC import SolveurPPC
 
@@ -28,8 +29,7 @@ while changes:
 
     startAt = datetime.now()
     ppc = SolveurPPC()
-    print(r.json())
-    
+    #print(r.json())
     starting_solution = Solution.generate_Solution_from_json(r.json())
     solution = ppc.add_constraint(starting_solution, 10*data['DURATION']) #TO CHANGE
     print(solution)
