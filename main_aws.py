@@ -21,9 +21,16 @@ data = r.json()
 changes = r.status_code < 400
 
 while changes:
+    r = requests.get(baseUrl + '/project/solution?gantt=0')
+    if r.status_code >= 400:
+        break
+
     startAt = datetime.now()
     ppc = SolveurPPC()
-    #ppc.create_model(data['METHOD'], 60*data['DURATION'])
+    solution = ppc.add_constraint(r.text, 10*data['DURATION']) #TO CHANGE
+    print(solution)
+
+    #r = requests.post(baseUrl + '/project/solution', json=solution.to_json())
 
     r = requests.get(baseUrl + '/project/parameters')
     data = r.json()
