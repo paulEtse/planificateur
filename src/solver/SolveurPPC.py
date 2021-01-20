@@ -61,7 +61,7 @@ class SolveurPPC:
                         for task in all_tasks:
                             if Part + Task == task.get_name():
                                 task.set_start(Start)
-                                #print("task : ", task, " set at : ", Start)
+                                print("task : ", task, " set at : ", Start, " -> ",Finish)
         modified = False
         for i in range(len(r.json())):
             yo = pd.DataFrame.from_dict(r.json()[i], orient = 'index')
