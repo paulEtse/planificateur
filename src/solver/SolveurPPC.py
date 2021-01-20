@@ -41,7 +41,7 @@ class SolveurPPC:
 
     
 
-    def add_constraint(self, solution): #,solution,timeout
+    def add_constraint(self, solution, timeout): #,solution,timeout
         baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
         r = requests.get(baseUrl + '/project/constraints')
 
@@ -78,7 +78,7 @@ class SolveurPPC:
                         if taskname in task.get_name():
                             task.set_start_min(date_converter.convert_to_work_time(datetime.timestamp(date)))
                 
-                self.solve(mdl, 24)
+                return self.solve(mdl, timeout)
                 # for var in mdl.get_all_variables():
                 #     print(var)
 
@@ -86,6 +86,7 @@ class SolveurPPC:
 
             else:
                 print(False)
+                return None
                 #return("solution deja ok pas de modif") #TODO
                 
 
