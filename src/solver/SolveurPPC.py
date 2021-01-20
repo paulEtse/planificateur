@@ -53,7 +53,7 @@ class SolveurPPC:
         date_de_prise_en_compte = date_de_prise_en_compte + timedelta(days = -388)
         all_tasks = mdl.get_all_variables()
         #print(date_de_prise_en_compte)
-        for (Task, Start, Finish, Part, Ispresent) in sol.values:
+        for (Task,Ispresent, Start, Finish, Part) in sol.values:
                     #print(date_converter.convert_to_timestamp(int(Start)))
                     if date_converter.convert_to_timestamp(int(Start)) < datetime.timestamp(date_de_prise_en_compte):
                         #print(Task, Start, Finish, Part, Ispresent)
@@ -98,7 +98,7 @@ class SolveurPPC:
         for i in range(len(self.timeOUEST)):
             min_start_time = int(date_converter.convert_to_work_time(datetime.timestamp(pd.to_datetime(self.req_matOUEST.iloc[i,2]))))
 
-            print(min_start_time, self.req_matOUEST.iloc[i,2])
+            #print(min_start_time, self.req_matOUEST.iloc[i,2])
             meca_length = int(self.timeOUEST.iloc[i, 2] / 10)
             qc_length = int(self.timeOUEST.iloc[i, 3] / 10)
 
@@ -329,10 +329,9 @@ class SolveurPPC:
             if len(df3) >0 :
                 #print(df3)
                 df3 = df3[0]
-                
                 stp.add_interval_var_solution(var, df3[4], df3[1], df3[2] , df3[2] - df3[1], df3[2] - df3[1])
             
-        stp.print_solution()
+        #stp.print_solution()
         # print("AUREVOIR")
         mdl.set_starting_point(stp)
 
@@ -374,7 +373,7 @@ class SolveurPPC:
         
         solution = Solution.create_solution_from_PPC_result(msol.get_all_var_solutions())
         Solution.create_html_gantt_from_solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
-        Solution.generate_json_from_Solution(solution, f"Solution_PPC_{timeout}_sec_{strategy}_type_{searchType}")
+        print(Solution.generate_json_from_Solution(solution))
 
         return solution
 

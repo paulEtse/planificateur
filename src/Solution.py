@@ -33,11 +33,11 @@ def create_solution_from_PPC_result(ppc_solution):
 
 
 def generate_Solution_from_json(json):
-    solution = pd.read_json(path_or_buf=json)
+    solution = pd.read_json(json, orient="split")
     return(solution)
 
 def generate_json_from_Solution(solution):
-    return solution.to_json()
+    return solution.to_json(orient="split")
 
 
 def create_html_gantt_from_solution(solution, name): 

@@ -4,11 +4,12 @@ import requests
 import os
 import time
 
+from src import Solution
 from src.solver.SolveurPPC import SolveurPPC
 
 from docplex.cp.config import context
-context.solver.agent = 'local'
-context.solver.local.execfile = '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'
+# context.solver.agent = 'local'
+# context.solver.local.execfile = '/opt/ibm/ILOG/CPLEX_Studio201/cpoptimizer/bin/x86-64_linux/cpoptimizer'
 
 shutdown = False
 if shutdown:
@@ -27,7 +28,10 @@ while changes:
 
     startAt = datetime.now()
     ppc = SolveurPPC()
-    solution = ppc.add_constraint(r.text, 10*data['DURATION']) #TO CHANGE
+    print(r.json())
+    
+    starting_solution = Solution.generate_Solution_from_json(r.json())
+    solution = ppc.add_constraint(starting_solution, 10*data['DURATION']) #TO CHANGE
     print(solution)
 
     #r = requests.post(baseUrl + '/project/solution', json=solution.to_json())
