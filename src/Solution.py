@@ -180,3 +180,23 @@ def taux_occupation_operateurs_dataframe(sol_df, start_point = None, next_start_
     #print("time_max : ", time_max)
 
     return df_meca, df_qc
+
+
+def print_taux_occupation(df_meca, df_qc):
+    print("proportions des opérateurs méca: \n" , df_meca)
+    print("proportions des opérateurs qc: \n" , df_qc)
+
+
+def print_taux_occupation_all_proportions(all_proportions):
+    print("----------------------------------------------")
+    print("-----taux d'occupation sur tout le projet-----")
+    print("----------------------------------------------\n")
+
+    i = 0
+    for item in all_proportions:
+        start_date = item[0]
+        end_date = item[1]
+        print(">>> num period = ", i+1, " >>> start date : ",  start_date, " >>> end date : ", end_date)
+        print_taux_occupation(item[2][0], item[2][1])
+        print("----------------------------------------------\n")
+        i = i+1

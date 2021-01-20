@@ -57,7 +57,8 @@ r = requests.get("https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev/pro
 # # #apply_and_check_nouvelle_livraison(2, 4, 2019, "W10111C", sol)
 
 #test taux occupation
-Solution.taux_occupation_operateurs_by_weeks(r.json(),1)
+all_prop = Solution.taux_occupation_operateurs_by_weeks(r.json(),1)
+Solution.print_taux_occupation_all_proportions(all_prop)
 
 
 # livraisons = pd.read_excel("./data/livraison guides.xlsx",parse_dates=['livraison au MAG AIT'])
