@@ -74,6 +74,7 @@ def end_date_calc(start_date, duration):
 
 
 def convert_to_work_time(ts):
+    #print(ts)
     cur_ts = datetime.datetime.timestamp(startdate)
     time_to_return = 0
     #print("while cond",ts - 60*60*24)

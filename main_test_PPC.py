@@ -13,4 +13,6 @@ ppc = SolveurPPC()
 # ppc.create_model(2,60*60, "MultiPoint")
 # ppc.create_model(5,60*60)
 # ppc.create_model(10,60*60)
-ppc.add_constraint("Solution_PPC_60_sec_7_type_Restart.json")
+ppc.main(True,30*60, "")
+
+#ppc.add_constraint("Solution_PPC_36000_sec_0_type_Restart_k_1v2.0.json",120)

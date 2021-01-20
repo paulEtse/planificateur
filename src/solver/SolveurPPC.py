@@ -41,53 +41,45 @@ class SolveurPPC:
 
     
 
-    def add_constraint(self, solution, timeout): #,solution,timeout
+    def add_constraint(self, solution, timeout): 
         baseUrl = 'https://qrfx7lea3b.execute-api.eu-west-3.amazonaws.com/dev'
         r = requests.get(baseUrl + '/project/constraints')
 
         mdl = self.create_model()
         mdl,sol = self.start_from_solution(mdl, solution)
 
-        for i in range(len(r.json())): 
-            yo = pd.DataFrame.from_dict(r.json()[i], orient = 'index')
-            print(yo)
-            date_de_prise_en_compte = datetime.strptime(yo.iloc[1,0][:10],"%Y-%m-%d") + timedelta(days=1)
-            date_modifiee = datetime.strptime(yo.iloc[2,0], "%Y-%m-%d")
-
-            print(date_modifiee)
-            date_de_prise_en_compte = date_de_prise_en_compte + timedelta(days = -388)
-            print(date_de_prise_en_compte)
-            
-            sol = sol[sol.IsPresent == True]
-            need_new_solve, l = self.apply_and_check_nouvelle_livraison(date_modifiee.day, date_modifiee.month, date_modifiee.year, yo.iloc[0,0], solution)
-            if(need_new_solve):
-                #print(sol)
-                all_tasks = mdl.get_all_variables()
-                #print(datetime.timestamp(date_de_prise_en_compte))
-                for (Task, Start, Finish, Part, Ispresent) in sol.values:
+        yo = pd.DataFrame.from_dict(r.json()[-1], orient = 'index')
+        date_de_prise_en_compte = datetime.strptime(yo.iloc[1,0][:10],"%Y-%m-%d") + timedelta(days=1)
+        date_de_prise_en_compte = date_de_prise_en_compte + timedelta(days = -388)
+        all_tasks = mdl.get_all_variables()
+        #print(date_de_prise_en_compte)
+        for (Task, Start, Finish, Part, Ispresent) in sol.values:
                     #print(date_converter.convert_to_timestamp(int(Start)))
                     if date_converter.convert_to_timestamp(int(Start)) < datetime.timestamp(date_de_prise_en_compte):
                         #print(Task, Start, Finish, Part, Ispresent)
                         for task in all_tasks:
                             if Part + Task == task.get_name():
                                 task.set_start(Start)
-
+                                print("task : ", task, " set at : ", Start)
+        modified = False
+        for i in range(len(r.json())):
+            yo = pd.DataFrame.from_dict(r.json()[i], orient = 'index')
+            #print(yo)
+            date_modifiee = datetime.strptime(yo.iloc[2,0], "%Y-%m-%d")
+            #print(date_modifiee)
+            sol = sol[sol.IsPresent == True]
+            need_new_solve, l = self.apply_and_check_nouvelle_livraison(date_modifiee.day, date_modifiee.month, date_modifiee.year, yo.iloc[0,0], solution)
+            if(need_new_solve):
+                modified = True
                 for taskname, date in l:
                     print(taskname + " " + str(date_converter.convert_to_work_time(datetime.timestamp(date))))
                     for task in all_tasks:
                         if taskname in task.get_name():
                             task.set_start_min(date_converter.convert_to_work_time(datetime.timestamp(date)))
-                
-                return self.solve(mdl, timeout)
-                # for var in mdl.get_all_variables():
-                #     print(var)
-
-                
-
-            else:
-                print(False)
-                return None
-                #return("solution deja ok pas de modif") #TODO
+        if modified :
+            return self.solve(mdl, timeout)
+        else:
+            return None
                 
 
     def create_model(self):
@@ -287,7 +279,7 @@ class SolveurPPC:
         mdl.add(mdl.sum(kitting_slots_EAST) <= 3)
         mdl.add(mdl.sum(kitting_slots_WEST) <= 3)
 
-        [mdl.add(mdl.start_of(task) % 14*6 < 11*6) for task in all_tasks if "meca" in task.name]
+        [mdl.add(mdl.start_of(task) % (14*6) < 11*6) for task in all_tasks if "meca" in task.name]
 
         MS1_meca_qc = [task for task in MS1_vars if (("meca" in task.name) or ("qc" in task.name))]
         mdl.add(mdl.no_overlap(MS1_meca_qc))
