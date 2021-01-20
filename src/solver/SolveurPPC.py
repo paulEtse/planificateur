@@ -77,8 +77,8 @@ class SolveurPPC:
                     for task in all_tasks:
                         if taskname in task.get_name():
                             task.set_start_min(date_converter.convert_to_work_time(datetime.timestamp(date)))
+        print(mdl.export_model())
         if modified :
-            #print(mdl.export_model())
             return self.solve(mdl, timeout)
         else:
             return None
